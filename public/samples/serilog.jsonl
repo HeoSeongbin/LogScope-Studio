@@ -1,0 +1,3 @@
+{"@t":"2026-11-06T14:32:00.1234567+09:00","@l":"Error","@m":"Database connection failed","@x":"System.InvalidOperationException: Demo failure","SourceContext":"Demo.Payments","RequestId":"demo-request-1"}
+{"@t":"2026-11-06T05:32:01Z","@mt":"Completed {Count} requests","Count":2}
+{"Timestamp":"2026-11-06T05:32:02Z","Level":"Warning","RenderedMessage":"Retry scheduled","Properties":{"SourceContext":"Demo.Retry","TraceId":"demo-trace-1"}}

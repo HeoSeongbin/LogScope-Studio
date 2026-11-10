@@ -1,0 +1,5 @@
+{"timestamp":"2026-11-06T14:32:00+09:00","level":"ERROR","service":"demo-api","message":"Request failed","traceId":"demo-trace-1","exception":{"type":"DemoException","message":"Demo failure"}}
+{"time":"2026-11-06 14:32:01","severity":"Information","msg":"로컬 시간은 원문으로 표시","request_id":"demo-request-1"}
+{"timestamp":"not-a-date","level":"unexpected","message":"Invalid fields are preserved"}
+{broken-json
+{"@timestamp":"2026-11-06T05:32:03Z","logLevel":"DEBUG","renderedMessage":"Recovered after invalid row"}

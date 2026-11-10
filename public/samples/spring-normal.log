@@ -1,0 +1,5 @@
+2026-11-06 14:30:01.123 INFO 1234 --- [http-nio-8080-exec-1] c.example.UserService : Request started
+2026-11-06 14:30:01.200 DEBUG 1234 --- [http-nio-8080-exec-1] c.example.UserRepository : Looking up demo user
+2026-11-06 14:30:02.456 ERROR 1234 --- [http-nio-8080-exec-1] c.example.UserService : Database connection timed out
+2026-11-06 14:30:03.010 WARN 1234 --- [http-nio-8080-exec-2] c.example.ConnectionPool : Connection pool is running low
+2026-11-06 14:30:04.105 INFO 1234 --- [http-nio-8080-exec-2] c.example.UserService : 요청 처리가 완료되었습니다

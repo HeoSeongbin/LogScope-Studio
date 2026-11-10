@@ -1,0 +1,5 @@
+Application startup
+INFO Service is ready
+WARN Retry scheduled
+ERROR Remote connection failed
+No timestamp or identifier available

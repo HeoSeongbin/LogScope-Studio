@@ -1,0 +1,4 @@
+info: Demo.Hosting[14]
+      Now listening on: http://localhost:5000
+2026-11-06T14:31:10.250+09:00 fail: Demo.Controllers.UserController[42] Request processing failed
+warn: Demo.Services.Retry[8] Retry scheduled

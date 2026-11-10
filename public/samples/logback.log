@@ -1,0 +1,2 @@
+2026-11-06 14:30:01,123 [main] INFO demo.Application - Application ready
+2026-11-06 14:30:02,456 ERROR [worker-1] demo.Repository - Database connection failed

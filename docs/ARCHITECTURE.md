@@ -1,0 +1,27 @@
+# Phase 2 아키텍처
+
+```mermaid
+flowchart LR
+  File[파일 선택 / Drop] --> Decode[크기 제한 / UTF 디코딩]
+  Decode --> Originals[원본 텍스트 sources]
+  Originals --> Registry[자동 감지 / 파일별 수동 선택]
+  Registry --> Text[Spring / Java Pattern / ILogger / Serilog]
+  Registry --> Json[JSON 문서 / JSON Lines / Serilog JSON]
+  Registry --> IIS[IIS W3C 상태 파서]
+  Registry --> Generic[Generic 폴백 + 실패 사유]
+  Text --> Events[LogEvent]
+  Json --> Events
+  IIS --> Events
+  Generic --> Events
+  Events --> Filter[파일 / 레벨 필터]
+  Filter --> UI[페이지 목록 / 원본 및 정규화 상세]
+  Originals --> Registry
+```
+
+src/core/parsing은 React와 I/O를 참조하지 않는다. common.ts는 원본 행 위치·레벨 별칭·시간 검증을 공유한다. text.ts/json.ts/iis.ts는 형식별 규칙을 갖고 src/core/parsers.ts가 디스패치한다. 자동 모드는 유효 JSON 문서를 먼저 판별한 뒤, 그 외 입력은 행별 명시적 패턴을 순서대로 적용한다. IIS의 컬럼 상태와 ILogger 헤더/첫 메시지 경계만 다음 행에 영향을 준다.
+
+Zustand는 decoded original sources와 normalized events를 분리한다. 파일 선택 시 원본으로 재분석해 해당 파일 결과를 교체한다. 읽기 완료 순서가 달라도 파일 등록 순서를 유지한다. 파일 제거/초기화는 두 저장소를 모두 비운다. 사용자 로그를 외부로 전송하는 요청과 브라우저 영구 저장은 없다. 샘플 fetch는 정적 샘플을 읽기만 한다.
+
+JSON 배열의 각 값은 원문 문자 범위를 스캔해 재직렬화 없이 잘라낸다. ID에 문자 오프셋을 포함해 같은 줄의 여러 객체를 구분하며 줄 번호는 원문 위치로 계산한다. JSON 배열 구분자와 IIS 지시문은 원본 저장소에 남지만 이벤트 건수에는 포함하지 않는다. 잘못된 지시문은 진단 가능한 실패 이벤트로 보존한다.
+
+Web Worker, 검색, 가상 스크롤, 예외 fingerprint, 추적 엔진은 후속 Phase다. 현재 파일당 2 MiB·세션당 8 MiB 보호 한도를 유지한다. 원본 텍스트와 이벤트 rawText를 함께 보관하므로 실제 메모리 사용량은 파일 바이트 합보다 크다.

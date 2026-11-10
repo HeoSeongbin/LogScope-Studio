@@ -1,0 +1,8 @@
+#Software: Microsoft Internet Information Services 10.0
+#Version: 1.0
+#Fields: date time cs-method cs-uri-stem sc-status time-taken c-ip
+2026-11-06 05:33:00 GET /demo/users 200 12 192.0.2.10
+2026-11-06 05:33:01 POST /demo/orders 500 250 192.0.2.11
+#Fields: sc-status cs-uri-stem date time cs-method c-ip time-taken
+404 /demo/missing 2026-11-06 05:33:02 GET 192.0.2.10 3
+bad incomplete row
