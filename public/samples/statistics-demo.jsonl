@@ -1,0 +1,12 @@
+{"timestamp":"2026-11-06T05:30:00Z","level":"INFO","service":"demo-api","logger":"Demo.Api","message":"Request started"}
+{"timestamp":"2026-11-06T14:30:20+09:00","level":"DEBUG","service":"demo-worker","logger":"Demo.Worker","message":"Queue checked"}
+{"timestamp":"2026-11-06T05:31:00Z","level":"ERROR","service":"demo-api","logger":"Demo.Api","message":"Storage unavailable","exception":{"type":"DemoException","message":"Demo store failure","stackTrace":"   at Demo.Store() in C:\\demo\\Store.cs:line 12"}}
+{"timestamp":"2026-11-06T05:31:10Z","level":"ERROR","service":"demo-api","logger":"Demo.Api","message":"Storage unavailable","exception":{"type":"DemoException","message":"Demo store failure","stackTrace":"   at Demo.Store() in C:\\demo\\Store.cs:line 12"}}
+{"timestamp":"2026-11-06T14:31:20+09:00","level":"FATAL","service":"demo-api","logger":"Demo.Api","message":"Storage unavailable","exception":{"type":"DemoException","message":"Demo store failure","stackTrace":"   at Demo.Store() in C:\\demo\\Store.cs:line 12"}}
+{"timestamp":"2026-11-06T05:31:30Z","level":"ERROR","service":"demo-api","logger":"Demo.Api","message":"Downstream timeout"}
+{"timestamp":"2026-11-06T05:31:40Z","level":"INFO","service":"demo-api","logger":"Demo.Api","message":"Health check complete"}
+{"timestamp":"2026-11-06T05:33:00Z","level":"WARN","service":"demo-worker","logger":"Demo.Worker","message":"Retry scheduled"}
+{"level":"ERROR","message":"Unknown time failure"}
+{"timestamp":"invalid-date","level":"INFO","service":"demo-worker","logger":"Demo.Worker","message":"Unusable time"}
+{"timestamp":"2026-11-06T05:34:00Z","level":"TRACE","service":"demo-api","logger":"Demo.Api","message":"Request detail"}
+{"timestamp":"2026-11-06T05:34:20Z","level":"UNKNOWN","service":"demo-api","logger":"Demo.Api","message":"Unclassified record"}

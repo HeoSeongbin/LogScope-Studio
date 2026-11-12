@@ -102,3 +102,25 @@ merge.ts는 최초 이벤트 ID/메타데이터를 보존하고 input.text의 �
 canonical JSON tuple 전체를 v1 fingerprint 키로 사용한다. root 타입·메시지, 주요 5개 frame의 class/method/file/line/module, 생략 개수, cause/suppressed 구조, 실제 서비스·Logger를 포함한다. 메시지 숫자/UUID·파일 위치/줄 번호·모듈 버전을 임의 정규화하지 않는다. 짧은 해시만으로 그룹을 합치지 않는다. 미해석 노드의 raw stack과 분석 한도 초과 이벤트의 rawText도 포함해 정보가 부족하다는 이유로 다른 입력을 합치지 않는다. 동적 값이 다르면 그룹이 나뉘는 보수적 tradeoff를 택한다.
 
 현재 필터 결과에서 useMemo로 그룹을 계산한다. root 이벤트 ID당 1회만 집계하며 같은 내용이 다른 파일에서 관측되면 각각 1회다. cause/suppressed는 root의 구조이며 별도 발생 횟수로 중복 집계하지 않는다. 첫/마지막은 실제 정규화 epoch의 min/max이고 null 시각 이벤트 수를 따로 제공한다. 관련 이벤트 순서는 현재 검색 결과의 순서를 따른다. 파일 제거/재분석/초기화는 events 변경을 통해 자동 반영된다. 같은 fingerprint는 유사한 기록일 뿐 같은 장애 원인을 보장하지 않는다고 UI에 표시한다.
+
+## ADR-018 — 실제 이벤트 기반 독립 통계 (2026-11-12, 채택)
+
+Phase 5는 현재 공통 검색/기간/레벨/파일 필터의 결과를 순수 aggregateStatistics에 전달한다. 동일 이벤트 ID는 첫 관측 한 번만 집계하며, 같은 내용이라도 다른 파일 ID의 이벤트는 별개다. ERROR/FATAL 비율은 해당 레벨의 이벤트 수 / 전체 결과 이벤트 수다. 빈 입력의 비율은 null이며 UI에서 —로 표시한다. 시간 미확인 이벤트도 전체 분모에 포함한다. HTTP 4xx/5xx는 parserId=iis의 유효 sc-status만 읽고 severity나 Exception으로 변환하지 않는다. root 예외 이벤트만 1회 집계하며 cause/suppressed를 발생 수에 더하지 않는다. 세 지표는 겹칠 수 있으므로 합계로 읽지 않도록 표시한다.
+
+서비스/Logger가 없으면 null로 집계하고 UI에서만 미기록 안내한다. 임의 서비스명이나 환경을 만들지 않는다. 파일은 이름이 아닌 sourceFileId로 구분한다. 차원 표는 현재 결과에 이벤트가 있는 그룹만 표시한다. ERROR/FATAL 상위 메시지는 실제 message/service/logger 조합을 사용하고 동적 값을 제거하지 않는다. 상위 예외는 기존 Phase 4 fingerprint 정책을 재사용한다. 파생 통계는 useMemo로 계산하고 별도 영구 저장하지 않는다.
+
+## ADR-019 — UTC 버킷과 관측 기준 구간 (2026-11-12, 채택)
+
+1분/5분/1시간/1일은 epoch 기준 floor(timestamp/duration)로 정렬하고 [start,end)로 집계한다. 이전 Phase의 전체 기간 필터는 inclusive를 유지하므로 종료 시각이 버킷 경계에 정확히 걸리면 그 이벤트는 다음 버킷에 놓인다. 시간대 문자열이 달라도 같은 epoch면 같은 버킷이다. null/비정상 시각은 시간 차트에서 제외하고 전체 통계 및 미확인 건수로 남긴다. 일 단위는 UTC 고정 24시간이며 현지 일/DST를 가정하지 않는다.
+
+현재 결과의 최소~최대 관측 버킷 사이의 빈 구간만 0건으로 채운다. 오늘이나 임의 분석 기간까지 확장하지 않는다. 0은 입력에 이벤트가 없다는 뜻이며 실제 서비스가 정상이라는 증거가 아니다. 버킷 2,000개 초과/날짜 표현 범위 초과는 명시적으로 실패하며 조용히 잘라내거나 해상도를 바꾸지 않는다. 집계 오류가 있으면 집중 구간도 계산하지 않았다고 알린다.
+
+집중 구간은 선택 지표 건수≥최소 건수 AND 선택 지표/버킷 전체≥최소 비율로 정의한다. 기본은 ERROR+FATAL 3건·30%이고 사용자가 바꿀 수 있다. 관측 건수 내림차순·동률 UTC 시작순으로 상위 10개를 표시한다. 이는 이상치 탐지나 장애 원인 확정이 아니다. 차트/표/집중 구간에서 구간을 선택하면 실제 그 구간에 속한 현재 결과 이벤트와 레벨 분포를 보여준다.
+
+## ADR-020 — 로컬 차트와 접근 가능한 데이터 표 (2026-11-12, 채택)
+
+PROJECT.md의 시각화 스택에 맞춰 Chart.js 4.6.1과 react-chartjs-2 5.3.1을 설치하고 lockfile에 고정했다. 공식 가이드에서 peer 호환성(Chart.js v4)과 현대 브라우저 Canvas 지원을 확인했다. 필요한 scale/element/plugin만 등록한다. category 축과 직접 계산한 UTC ISO 라벨을 사용해 추가 날짜 adapter와 호스트 시간대 해석을 피한다. 차트는 애니메이션 없이 로컬 데이터를 그리며 외부 API/CDN을 호출하지 않는다.
+
+Canvas의 수치와 동일한 데이터 표·버킷 선택 버튼을 제공한다. 필드 라벨과 로그는 React 텍스트 또는 Canvas 텍스트로 렌더링하며 HTML 삽입하지 않는다. 서비스 차트/메시지/예외 상위 목록의 표시 한도를 명시하고 표는 페이지로 조회한다. 순수 차트 데이터 변환은 unit test, UI 연결은 Canvas wrapper mock을 사용한 jsdom test로 검증했다. 실제 브라우저 Canvas 페인팅·반응형/접근성·배포는 아직 미검증이다.
+
+확인한 1차 자료: [Chart.js integration](https://www.chartjs.org/docs/latest/getting-started/integration), [Chart.js browser support](https://www.chartjs.org/docs/latest/developers/), [react-chartjs-2 official repository](https://github.com/reactchartjs/react-chartjs-2).

@@ -44,3 +44,13 @@ UI: 새 업로드 형식 선택, 파일별 파서 변경, JSON 매핑 적용과 
 - jsdom Analyzer 이동·반복 건수/시각/원본 선택/원인 트리/필터 공유/Explorer 복귀/샘플 선택
 
 실제 브라우저 E2E·시각/접근성 검사·Pages 배포·대용량 및 청크 스트리밍은 미검증이다.
+
+## Phase 5 검증 (2026-11-12)
+
+타입 검사/ESLint/Production Build 통과, Vitest 11개 파일·115개 테스트 통과 (기존 93개 포함).
+
+실제 statistics-demo.jsonl 샘플: 12개 이벤트, ERROR+FATAL 5, root 예외 3, 오류 비율 5/12, timed 10/untimed 2. UTC 1분 버킷 총건수 [2,5,0,1,2], 오류 [0,4,0,0,0]. 집중 구간 4/5=80%를 확인한다.
+
+추가 검증: 빈 입력/null 비율, 서비스/Logger 미기록, 파일 ID별 구분, 중복 ID만 제외, HTTP 4xx/5xx 독립, 필터·원본 불변, UTC/오프셋/음수 epoch/inclusive 기간과 half-open 버킷, 빈 구간, 시각 이상값, 2,000개 버킷·표현 범위 제한, 집중 지표별 기준, 실제 chart 데이터 라벨/값.
+
+Node File 업로드→Generic 재분석→제거 후 통계/차트 데이터 갱신·원문 보존을 검증한다. jsdom은 Dashboard/Timeline 전환, 필터 공유, 구간/원본 선택, 파일 통계 탐색, 기준 오류와 빈 데이터를 검증한다. UI의 Canvas wrapper는 mock이므로 실제 Canvas·차트 클릭/레이아웃·접근성·Pages E2E를 통과한 것으로 간주하지 않는다.

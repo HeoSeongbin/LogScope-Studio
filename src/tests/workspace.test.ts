@@ -3,8 +3,15 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { useWorkspace, MAX_FILE_BYTES } from '../stores/workspace';
 import { groupExceptions } from '../core/exceptions/groups';
+import { aggregateStatistics, buildTimeline } from '../core/statistics';
 afterEach(()=>useWorkspace.getState().reset());
 describe('file lifecycle',()=>{
+  it('recomputes statistics and timeline after real file upload, reparse and removal',async()=>{
+    const text=readFileSync('public/samples/statistics-demo.jsonl','utf8');await useWorkspace.getState().upload([new File([text],'stats.jsonl'),new File(['INFO other'],'other.log')]);const state=useWorkspace.getState();const id=state.files[0].id;
+    expect(aggregateStatistics(state.events).summary).toMatchObject({total:13,errors:5,exceptions:3});expect(buildTimeline(state.events,'1m').buckets).toHaveLength(5);
+    state.reparse(id,{parser:'generic'});expect(aggregateStatistics(useWorkspace.getState().events).summary.exceptions).toBe(0);expect(buildTimeline(useWorkspace.getState().events,'1m').buckets).toEqual([]);expect(useWorkspace.getState().sources[id]).toBe(text);
+    state.remove(id);expect(aggregateStatistics(useWorkspace.getState().events).summary.total).toBe(1);expect(buildTimeline(useWorkspace.getState().events,'1m').buckets).toEqual([]);
+  });
   it('uploads merged stacks, reparses without duplicates and removes only derived file groups',async()=>{
     const text=readFileSync('public/samples/spring-exception.log','utf8');await useWorkspace.getState().upload([new File([text],'java.log'),new File(['INFO other'],'other.log')]);
     const state=useWorkspace.getState();const id=state.files[0].id;expect(state.files[0].count).toBe(3);expect(state.files[0].failures).toBe(0);expect(groupExceptions(state.events)[0].events).toHaveLength(2);expect(state.sources[id]).toBe(text);

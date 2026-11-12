@@ -62,3 +62,22 @@ flowchart LR
 ```
 
 src/core/exceptions/stack.ts는 선언/프레임/트리와 구조화 필드 분석, merge.ts는 파일별 이벤트 경계와 원문 slice, groups.ts는 보수적 fingerprint 및 관측 통계를 담당한다. UI는 원본/분석 저장소를 수정하지 않는다. 예외 그룹은 별도 영구 상태를 만들지 않고 현재 필터 결과에서 파생한다. 파일 파싱과 그룹 계산은 아직 메인 스레드이며 Phase 7 스트리밍/Worker 최적화와 구분한다.
+
+## Phase 5 통계 경로
+
+```mermaid
+flowchart LR
+  Filtered[현재 검색·기간·레벨·파일 결과] --> Unique[이벤트 ID 중복 제외]
+  Unique --> Summary[레벨/파일/서비스/Logger/오류/예외 통계]
+  Unique --> Timed[유효 epoch 이벤트만]
+  Unique --> Untimed[미확인 시각 별도 집계]
+  Timed --> Bucket[UTC 고정 버킷]
+  Bucket --> Criteria[사용자 건수·비율 기준]
+  Bucket --> Charts[Chart.js / 동일 데이터 표]
+  Criteria --> Choose[구간 선택]
+  Charts --> Choose
+  Choose --> Original[해당 이벤트·원본 상세]
+  Summary --> Dashboard[Dashboard / 상위 오류·예외]
+```
+
+statistics.ts는 순수 집계·버킷·구간 함수, statistics-chart.ts는 수치→차트 데이터 변환이다. StatisticsDashboard는 동일 데이터를 Dashboard/Timeline으로 표시하고 StatisticsCharts는 필요한 Chart.js 구성만 등록한다. 외부 로그 요청과 저장은 없다. 기존 파서·원본 저장소·검색 Worker는 변경하지 않았다. 필터 결과 참조가 바뀔 때 계산하며 원본 선택만으로 전체 통계를 재계산하지 않는다. 메인 스레드 집계/파싱의 대용량 최적화는 Phase 7이다.
