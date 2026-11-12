@@ -18,13 +18,13 @@ flowchart LR
   Originals --> Registry
 ```
 
-src/core/parsing은 React와 I/O를 참조하지 않는다. common.ts는 원본 행 위치·레벨 별칭·시간 검증을 공유한다. text.ts/json.ts/iis.ts는 형식별 규칙을 갖고 src/core/parsers.ts가 디스패치한다. 자동 모드는 유효 JSON 문서를 먼저 판별한 뒤, 그 외 입력은 행별 명시적 패턴을 순서대로 적용한다. IIS의 컬럼 상태와 ILogger 헤더/첫 메시지 경계만 다음 행에 영향을 준다.
+src/core/parsing은 React와 I/O를 참조하지 않는다. common.ts는 원본 행 위치·레벨 별칭·시간 검증을 공유한다. text.ts/json.ts/iis.ts는 형식별 규칙을 갖고 src/core/parsers.ts가 디스패치한다. 자동 모드는 유효 JSON 문서를 먼저 판별한 뒤, 그 외 입력은 행별 명시적 패턴을 순서대로 적용한다. IIS의 컬럼 상태와 ILogger 헤더/첫 메시지 경계를 처리한 뒤 Phase 4 공통 예외 후처리로 확장한다.
 
 Zustand는 decoded original sources와 normalized events를 분리한다. 파일 선택 시 원본으로 재분석해 해당 파일 결과를 교체한다. 읽기 완료 순서가 달라도 파일 등록 순서를 유지한다. 파일 제거/초기화는 두 저장소를 모두 비운다. 사용자 로그를 외부로 전송하는 요청과 브라우저 영구 저장은 없다. 샘플 fetch는 정적 샘플을 읽기만 한다.
 
 JSON 배열의 각 값은 원문 문자 범위를 스캔해 재직렬화 없이 잘라낸다. ID에 문자 오프셋을 포함해 같은 줄의 여러 객체를 구분하며 줄 번호는 원문 위치로 계산한다. JSON 배열 구분자와 IIS 지시문은 원본 저장소에 남지만 이벤트 건수에는 포함하지 않는다. 잘못된 지시문은 진단 가능한 실패 이벤트로 보존한다.
 
-Phase 2 시점에 남겨둔 검색·가상 스크롤은 아래 Phase 3 경로로 확장했다. 파싱 Worker, 예외 fingerprint, 추적 엔진은 후속 Phase다. 현재 파일당 2 MiB·세션당 8 MiB 보호 한도를 유지한다. 원본 텍스트와 이벤트 rawText를 함께 보관하므로 실제 메모리 사용량은 파일 바이트 합보다 크다.
+Phase 2 시점에 남겨둔 검색·가상 스크롤은 아래 Phase 3 경로로 확장했다. 예외 fingerprint는 아래 Phase 4 경로로 확장했고 파싱 Worker·추적 엔진은 후속 Phase다. 현재 파일당 2 MiB·세션당 8 MiB 보호 한도를 유지한다. 원본 텍스트와 이벤트 rawText를 함께 보관하므로 실제 메모리 사용량은 파일 바이트 합보다 크다.
 
 ## Phase 3 검색 경로
 
@@ -45,3 +45,20 @@ flowchart LR
 ```
 
 검색 구현은 src/core/search.ts, 기간/정렬은 filter.ts, Worker 수명주기는 regex-client.ts, React 파생 결과 수명은 useExplorerSearch.ts로 분리한다. 임의 정규식은 검색 Worker 외부에서 실행하지 않는다. 파일 파서/원본 저장소는 변경하지 않았으며 검색 결과는 저장·전송하지 않는다. 일반 검색과 필터/정렬은 현재 메인 스레드에서 수행한다. Phase 7 파싱 Worker와 스트리밍 전환은 아직 미구현이다.
+
+## Phase 4 예외 경로
+
+```mermaid
+flowchart LR
+  Tokens[파서별 기본 이벤트] --> Merge[연속 trace 경계 판별]
+  Source[원본 줄 오프셋] --> Merge
+  Merge --> Stack[Java/.NET 트리·프레임 정규화]
+  Json[JSON 명시적 예외 필드] --> Stack
+  Stack --> Events[원본 범위 보존 LogEvent]
+  Events --> Search[기존 검색·필터]
+  Search --> Groups[canonical fingerprint 그룹]
+  Groups --> Analyzer[Exception Analyzer]
+  Analyzer --> Detail[선택 이벤트·원본·예외 트리]
+```
+
+src/core/exceptions/stack.ts는 선언/프레임/트리와 구조화 필드 분석, merge.ts는 파일별 이벤트 경계와 원문 slice, groups.ts는 보수적 fingerprint 및 관측 통계를 담당한다. UI는 원본/분석 저장소를 수정하지 않는다. 예외 그룹은 별도 영구 상태를 만들지 않고 현재 필터 결과에서 파생한다. 파일 파싱과 그룹 계산은 아직 메인 스레드이며 Phase 7 스트리밍/Worker 최적화와 구분한다.

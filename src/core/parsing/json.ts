@@ -1,5 +1,6 @@
 import type { LogEvent, LogInput, LogParser, MappingField, ParseOptions } from '../../types/log';
 import { applyTimestamp, baseEvent, genericEvent, normalizeLevel, sourceLines, type SourceLine } from './common';
+import { structuredException } from '../exceptions/stack';
 
 function isObject(value:unknown):value is Record<string,unknown>{return typeof value==='object'&&value!==null&&!Array.isArray(value);}
 function ownPath(object:Record<string,unknown>,path:string):unknown {
@@ -49,8 +50,7 @@ export function jsonRecord(input:LogInput,line:SourceLine,value:unknown,options:
   event.spanId=stringValue(first(value,['spanId','span_id','SpanId','@sp','Properties.SpanId']));
   event.correlationId=stringValue(first(value,['correlationId','CorrelationId','Properties.CorrelationId']));
   const exception=first(value,['exception','Exception','@x']);
-  if(typeof exception==='string')event.exception={stackTrace:exception};
-  else if(isObject(exception))event.exception={type:stringValue(first(exception,['type','Type','ClassName'])),message:stringValue(first(exception,['message','Message'])),stackTrace:stringValue(first(exception,['stackTrace','StackTrace','StackTraceString']))};
+  if(exception!==undefined){const analysis=structuredException(exception);event.exception=analysis.exception;for(const warning of analysis.warnings)warn(warning);}
   return event;
 }
 export function parseJsonLine(input:LogInput,line:SourceLine,options?:ParseOptions):LogEvent {

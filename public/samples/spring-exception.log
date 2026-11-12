@@ -1,0 +1,19 @@
+2026-11-06T14:30:01.123+09:00 ERROR 1234 --- [worker-1] demo.UserService : Database request failed
+java.sql.SQLException: Connection timed out
+    at demo.UserRepository.find(UserRepository.java:42)
+    at demo.UserService.get(UserService.java:20)
+    Suppressed: java.io.IOException: Close failed
+        at demo.Connection.close(Connection.java:8)
+Caused by: java.net.SocketTimeoutException: Read timed out
+    at demo.Socket.read(Socket.java:15)
+    ... 2 more
+2026-11-06T14:31:01.123+09:00 ERROR 1234 --- [worker-2] demo.UserService : Database request failed
+java.sql.SQLException: Connection timed out
+    at demo.UserRepository.find(UserRepository.java:42)
+    at demo.UserService.get(UserService.java:20)
+    Suppressed: java.io.IOException: Close failed
+        at demo.Connection.close(Connection.java:8)
+Caused by: java.net.SocketTimeoutException: Read timed out
+    at demo.Socket.read(Socket.java:15)
+    ... 2 more
+2026-11-06T14:32:00+09:00 INFO 1234 --- [main] demo.Application : Health check passed

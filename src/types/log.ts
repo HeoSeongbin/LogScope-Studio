@@ -1,6 +1,11 @@
 export const levels = ['TRACE','DEBUG','INFO','WARN','ERROR','FATAL','UNKNOWN'] as const;
 export type LogLevel = typeof levels[number];
-export interface LogException { type?: string; message?: string; stackTrace?: string }
+export interface StackFrame { className?: string; methodName?: string; fileName?: string; lineNumber?: number; module?: string; raw: string }
+export interface LogException {
+  type?: string; message?: string; stackTrace?: string; frames?: StackFrame[];
+  causeChain?: LogException[]; suppressed?: LogException[];
+  relation?: 'cause'|'inner'|'suppressed'; elidedFrames?: number; incomplete?: boolean;
+}
 export interface LogEvent {
   id: string; sourceFileId: string; sourceFileName: string;
   lineStart: number; lineEnd: number; timestamp: number | null;

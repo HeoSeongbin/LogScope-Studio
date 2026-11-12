@@ -1,0 +1,14 @@
+2026-11-06T05:33:00Z fail: Demo.Users[42] Request processing failed
+System.InvalidOperationException: Request rejected ---> System.ArgumentException: Invalid demo argument
+   at Demo.Validation.Validate() in C:\demo\Validation.cs:line 12
+   --- End of inner exception stack trace ---
+   at Demo.UserService.GetUser() in C:\demo\UserService.cs:line 55
+   at Demo.UserController.Get() in C:\demo\UserController.cs:line 20
+2026-11-06T05:34:00Z [ERR] Request processing failed
+System.InvalidOperationException: Request rejected
+ ---> System.ArgumentException: Invalid demo argument
+   at Demo.Validation.Validate() in C:\demo\Validation.cs:line 12
+   --- End of inner exception stack trace ---
+   at Demo.UserService.GetUser() in C:\demo\UserService.cs:line 55
+   at Demo.UserController.Get() in C:\demo\UserController.cs:line 20
+info: Demo.Hosting[0] Request finished

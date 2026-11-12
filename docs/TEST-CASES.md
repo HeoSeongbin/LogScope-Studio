@@ -30,3 +30,17 @@ UI: 새 업로드 형식 선택, 파일별 파서 변경, JSON 매핑 적용과 
 - 가상 목록: 10만건 범위 계산에서 창 크기/총 높이 유지. jsdom 1만건 스크롤에서 DOM 행 20개 미만 및 마지막 이벤트 선택
 
 브라우저 Worker E2E·실제 스크롤/레이아웃/모바일·Pages 배포·대용량 파싱 성능은 미검증이다. 브라우저 런타임 검증은 Node Worker/DOM 테스트로 대체 완료 처리하지 않는다.
+
+## Phase 4 검증 (2026-11-12)
+
+타입 검사/ESLint/Production Build 통과. Vitest 9개 파일·93개 테스트 통과. 기존 66개 중 임시 비병합 기대 2개는 Phase 4 원본/메타데이터 보존 병합 기대와 강한 검증으로 변경했다.
+
+- 실제 Java 19줄 샘플 → 3개 이벤트/2회 예외 1개 그룹, root/suppressed/cause/frame/생략 표식·원본 범위
+- 실제 .NET 14줄 샘플 → 3개 이벤트, inline/multiline inner와 종료 후 부모 프레임 소유
+- CRLF/탭/무개행/독립 root/임의 텍스트/빈 줄/INFO/새 로그/Generic·JSON·IIS 경계
+- JSON 명시적 타입 우선·InnerException/suppressed·중복 원인 비중복·깊이 초과 원형 보존
+- fingerprint 동적 값/타입/위치/서비스/Logger 차이, 파일 간 반복·같은 ID 비중복, 누락 시각, HTTP 500 비예외, 미해석/overflow 비합침
+- 실제 Node File 업로드·재분석·제거와 파생 그룹/원본 저장소 연계
+- jsdom Analyzer 이동·반복 건수/시각/원본 선택/원인 트리/필터 공유/Explorer 복귀/샘플 선택
+
+실제 브라우저 E2E·시각/접근성 검사·Pages 배포·대용량 및 청크 스트리밍은 미검증이다.

@@ -2,8 +2,14 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { useWorkspace, MAX_FILE_BYTES } from '../stores/workspace';
+import { groupExceptions } from '../core/exceptions/groups';
 afterEach(()=>useWorkspace.getState().reset());
 describe('file lifecycle',()=>{
+  it('uploads merged stacks, reparses without duplicates and removes only derived file groups',async()=>{
+    const text=readFileSync('public/samples/spring-exception.log','utf8');await useWorkspace.getState().upload([new File([text],'java.log'),new File(['INFO other'],'other.log')]);
+    const state=useWorkspace.getState();const id=state.files[0].id;expect(state.files[0].count).toBe(3);expect(state.files[0].failures).toBe(0);expect(groupExceptions(state.events)[0].events).toHaveLength(2);expect(state.sources[id]).toBe(text);
+    state.reparse(id,{parser:'generic'});expect(groupExceptions(useWorkspace.getState().events)).toEqual([]);state.reparse(id,{parser:'spring'});expect(groupExceptions(useWorkspace.getState().events)[0].events).toHaveLength(2);expect(useWorkspace.getState().events).toHaveLength(4);state.remove(id);expect(groupExceptions(useWorkspace.getState().events)).toEqual([]);expect(useWorkspace.getState().events[0].message).toBe('INFO other');
+  });
   it('uploads real Spring sample, removes only one file and resets',async()=>{
     await useWorkspace.getState().upload([new File([readFileSync('public/samples/spring-normal.log')],'spring.log'),new File(['INFO other'],'other.txt')]);
     const state=useWorkspace.getState();expect(state.events).toHaveLength(6);expect(state.files[0].parser).toBe('Spring Boot');expect(state.files.every(file=>file.status==='done')).toBe(true);

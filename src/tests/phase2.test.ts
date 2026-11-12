@@ -18,8 +18,8 @@ describe('Phase 2 supported text formats',()=>{
     expect(events[0]).toMatchObject({parserId:'dotnet',lineStart:1,lineEnd:2,level:'ERROR',logger:'Demo.Service',message:'Request failed',parsedFields:{eventId:42},rawText:text.split('\r\n').slice(0,2).join('\r\n')});
     expect(events[1].lineStart).toBe(3);
   });
-  it('does not merge a .NET stack trace as an ILogger message',()=>{
-    const {events}=parse('fail: Demo.Service[42]\n      System.InvalidOperationException: failure\n         at Demo.Run()');expect(events).toHaveLength(3);expect(events[1].parserId).toBe('generic');expect(events[1].parseErrors?.[0]).toContain('FORMAT_UNRECOGNIZED');
+  it('groups a .NET stack as exception data while retaining the ILogger header',()=>{
+    const {events}=parse('fail: Demo.Service[42]\n      System.InvalidOperationException: failure\n         at Demo.Run()');expect(events).toHaveLength(1);expect(events[0]).toMatchObject({parserId:'dotnet',logger:'Demo.Service',lineStart:1,lineEnd:3,exception:{type:'System.InvalidOperationException'}});expect(events[0].parseErrors??[]).toEqual([]);
   });
   it('normalizes all ILogger severity abbreviations',()=>{
     expect(parse(['trce','dbug','info','warn','fail','crit'].map(level=>`${level}: Demo[0] msg`).join('\n')).events.map(event=>event.level)).toEqual(['TRACE','DEBUG','INFO','WARN','ERROR','FATAL']);

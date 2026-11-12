@@ -82,3 +82,23 @@ Zustand에 적용된 검색/필터만 보관하고 UI의 편집 초안과 분리
 ## ADR-014 — 고정 높이 가상 목록 (2026-11-12, 채택)
 
 새 의존성 없이 순수 범위 계산기와 네이티브 스크롤을 사용한다. 62px 행, 434px viewport, 앞뒤 overscan 5로 렌더링 범위를 계산하고 나머지는 접근성 트리에서 제외한 spacer로 표현한다. 메시지는 한 줄로 제한하고 원문 전체는 상세에 둬 높이를 안정적으로 유지한다. aria-rowcount/aria-rowindex를 제공하고 스크롤 영역은 키보드 초점을 받을 수 있다. 조건·정렬·파일 변경 시 범위 컴포넌트를 재생성해 맨 위부터 표시한다. 가변 높이 확장과 실제 브라우저 스크롤/접근성 검증은 별도 과제로 남긴다.
+
+## ADR-015 — 원본 위치를 보존하는 예외 후처리 (2026-11-12, 채택)
+
+Phase 4는 각 파서의 기본 토큰화 뒤 공통 normalizeExceptions 단계를 적용한다. 파서 인터페이스의 저수준 parse 결과와 앱이 사용하는 parseLog 최종 결과를 구분한다. 예외 선언·frame·Caused by/Suppressed/--->·생략/종료 표식이 연속한 범위만 합친다. 새로운 구조화 이벤트 헤더, 새 root 예외, 빈 줄, 임의 일반 텍스트, JSON/IIS 실패 행은 경계다. 인접 ERROR/WARN/FATAL 문맥에만 외부 trace를 붙이며 정상 INFO 뒤에서는 독립 이벤트로 남긴다. 자동 모드의 단순 timestamp+severity 헤더도 Stack Trace가 바로 이어질 때만 문맥으로 읽는다. 수동 Generic은 행 단위 원문을 유지한다.
+
+merge.ts는 최초 이벤트 ID/메타데이터를 보존하고 input.text의 원본 줄 오프셋으로 rawText를 잘라낸다. 중간 CRLF/CR/LF와 전체 줄 범위를 유지한다. 독립 trace에는 기록되지 않은 timestamp/Logger/서비스/레벨을 상속하지 않는다. 독립 예외는 severity=UNKNOWN이고 type/프레임 부재는 undefined다. 성공적으로 분석된 trace 행의 기존 폴백 오류만 해제하며 다른 구문/데이터 진단은 지우지 않는다.
+
+## ADR-016 — Java/.NET 예외 트리와 분석 한도 (2026-11-12, 채택)
+
+기본 LogException에 실제 frames/causeChain/suppressed/relation/elidedFrames/incomplete를 추가한다. Java는 들여쓰기와 cause/suppressed 표식을, .NET은 inner parent 스택과 종료 표식을 사용한다. 프레임 생략 표식은 개수만 기록하며 실제 frame을 만들어 넣지 않는다. 한 줄 .NET inner와 여러 줄 inner를 같은 구조로 읽는다. 타입 추론은 식별자 끝이 Exception/Error/Throwable인 선언에 제한한다. 구조화 JSON의 명시적 Type/ClassName/Message/StackTrace/InnerException/cause/suppressed 필드는 우선 보존하며 문자열 스택을 다시 읽어 중복 child를 만들지 않는다. 모든 원래 JSON 필드는 parsedFields에 남는다.
+
+중첩 16단계·128노드 한도를 둔다. 초과 구간은 원문/parsedFields에 그대로 두고 정규화 한도 경고를 표시한다. 초과 프레임을 가장 최근의 정상 노드에 잘못 붙이지 않는다. 불완전/타입 충돌/해석 불가 구간은 명시적 진단을 기록한다. frames가 없다는 사실은 기록의 관측 상태일 뿐 로그 절단이나 장애 원인의 확정이 아니다. 파서 상태의 스트리밍 유지와 청크 경계 테스트는 Phase 7까지 미검증이다.
+
+형식 확인에 사용한 1차 자료: [Oracle Throwable.printStackTrace](https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/lang/Throwable.html), [Microsoft Exception.ToString](https://learn.microsoft.com/en-us/dotnet/api/system.exception.tostring?view=net-10.0), [Microsoft reference source Exception](https://github.com/microsoft/referencesource/blob/main/mscorlib/system/exception.cs).
+
+## ADR-017 — 보수적 fingerprint와 파생 예외 그룹 (2026-11-12, 채택)
+
+canonical JSON tuple 전체를 v1 fingerprint 키로 사용한다. root 타입·메시지, 주요 5개 frame의 class/method/file/line/module, 생략 개수, cause/suppressed 구조, 실제 서비스·Logger를 포함한다. 메시지 숫자/UUID·파일 위치/줄 번호·모듈 버전을 임의 정규화하지 않는다. 짧은 해시만으로 그룹을 합치지 않는다. 미해석 노드의 raw stack과 분석 한도 초과 이벤트의 rawText도 포함해 정보가 부족하다는 이유로 다른 입력을 합치지 않는다. 동적 값이 다르면 그룹이 나뉘는 보수적 tradeoff를 택한다.
+
+현재 필터 결과에서 useMemo로 그룹을 계산한다. root 이벤트 ID당 1회만 집계하며 같은 내용이 다른 파일에서 관측되면 각각 1회다. cause/suppressed는 root의 구조이며 별도 발생 횟수로 중복 집계하지 않는다. 첫/마지막은 실제 정규화 epoch의 min/max이고 null 시각 이벤트 수를 따로 제공한다. 관련 이벤트 순서는 현재 검색 결과의 순서를 따른다. 파일 제거/재분석/초기화는 events 변경을 통해 자동 반영된다. 같은 fingerprint는 유사한 기록일 뿐 같은 장애 원인을 보장하지 않는다고 UI에 표시한다.

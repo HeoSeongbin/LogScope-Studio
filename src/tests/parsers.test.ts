@@ -16,9 +16,9 @@ describe('Phase 1 parsing',()=>{
     const {events,parser}=parseLog(input('hello\r\n\r\nERROR failed'));
     expect(parser).toBe('Generic Text');expect(events).toHaveLength(3);expect(events[2].lineStart).toBe(3);expect(events[1].rawText).toBe('');
   });
-  it('retains unmatched lines and does not claim stack grouping',()=>{
+  it('preserves an INFO event and groups a following standalone stack without inventing context',()=>{
     const text=readFileSync('public/samples/spring-normal.log','utf8').trimEnd()+'\njava.sql.SQLException: timed out\n    at Demo.run(Demo.java:42)';
-    const {events}=parseLog(input(text));expect(events).toHaveLength(7);expect(events[5].parserId).toBe('generic');expect(events[5].parseWarnings).toBeDefined();
+    const {events}=parseLog(input(text));expect(events).toHaveLength(6);expect(events[4].exception).toBeUndefined();expect(events[5]).toMatchObject({lineStart:6,lineEnd:7,level:'UNKNOWN',exception:{type:'java.sql.SQLException'}});
   });
   it('only normalizes explicit timezone offsets',()=>{
     const text='2026-11-06T14:30:01.123+09:00 INFO 1 --- [main] demo.App : Ready';

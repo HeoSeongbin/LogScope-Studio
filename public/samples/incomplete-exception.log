@@ -1,0 +1,7 @@
+java.lang.NullPointerException: Demo object was null
+This unrelated line must remain a separate event
+    at demo.Worker.run(Worker.java:19)
+java.lang.IllegalArgumentException: Invalid demo input
+
+Caused by: java.io.IOException: Cause header without parent
+    at demo.Reader.read(Reader.java:5)

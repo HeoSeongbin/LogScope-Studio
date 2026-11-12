@@ -3,6 +3,7 @@ import { genericEvent, sourceLines } from './parsing/common';
 import { dotnetParser, dotnetWithMessage, genericParser, javaParser, parseJavaLine, parseSerilogLine, parseSpringLine, serilogParser, springParser } from './parsing/text';
 import { jsonParser, parseJsonDocument, parseJsonLine } from './parsing/json';
 import { iisParser, parseIisLine, type IisContext } from './parsing/iis';
+import { normalizeExceptions } from './exceptions/merge';
 export { genericParser, springParser } from './parsing/text';
 export const parsers=[springParser,javaParser,dotnetParser,serilogParser,jsonParser,iisParser,genericParser];
 export const parserChoices=[{id:'auto',name:'자동 감지 (혼합 형식)'},...parsers.map(parser=>({id:parser.id,name:parser.name}))];
@@ -34,6 +35,7 @@ export function parseLog(input:LogInput,options:ParseOptions={}) {
       }
     }
   }
+  events=normalizeExceptions(input,events,!['generic','json','iis'].includes(choice),choice==='auto');
   const ids=[...new Set(events.filter(event=>event.parserId!=='generic').map(event=>event.parserId))];
   let parser=ids.length>1?`혼합 (${ids.join(', ')})`:ids.length===1?(ids[0]==='serilog-json'?'Serilog JSON':parsers.find(parser=>parser.id===ids[0])?.name??ids[0]):'Generic Text';
   if(choice!=='auto')parser=parsers.find(parser=>parser.id===choice)!.name;
