@@ -1,0 +1,6 @@
+2026-11-06T14:30:01.120+09:00 INFO 1234 --- [http-1] [requestId=req-demo-001 traceId=trace-demo-001 correlationId=flow-demo-001 spanId=span-api-1] demo.Api : Request received
+2026-11-06T14:30:01.145+09:00 INFO 1234 --- [http-1] [requestId=req-demo-001 traceId=trace-demo-001 correlationId=flow-demo-001 spanId=span-api-1] demo.Api : Calling storage
+2026-11-06T14:30:05.150+09:00 ERROR 1234 --- [http-1] [requestId=req-demo-001 traceId=trace-demo-001 correlationId=flow-demo-001 spanId=span-api-1] demo.Api : Request failed
+java.sql.SQLException: Demo storage timed out
+    at demo.Repository.find(Repository.java:42)
+2026-11-06T14:31:00+09:00 INFO 1234 --- [http-2] [requestId=req-demo-002 traceId=trace-demo-002] demo.Api : Another request received

@@ -124,3 +124,25 @@ PROJECT.md의 시각화 스택에 맞춰 Chart.js 4.6.1과 react-chartjs-2 5.3.1
 Canvas의 수치와 동일한 데이터 표·버킷 선택 버튼을 제공한다. 필드 라벨과 로그는 React 텍스트 또는 Canvas 텍스트로 렌더링하며 HTML 삽입하지 않는다. 서비스 차트/메시지/예외 상위 목록의 표시 한도를 명시하고 표는 페이지로 조회한다. 순수 차트 데이터 변환은 unit test, UI 연결은 Canvas wrapper mock을 사용한 jsdom test로 검증했다. 실제 브라우저 Canvas 페인팅·반응형/접근성·배포는 아직 미검증이다.
 
 확인한 1차 자료: [Chart.js integration](https://www.chartjs.org/docs/latest/getting-started/integration), [Chart.js browser support](https://www.chartjs.org/docs/latest/developers/), [react-chartjs-2 official repository](https://github.com/reactchartjs/react-chartjs-2).
+
+## ADR-021 — 사용자 파일 문맥과 로그 근거 분리 (2026-11-12, 채택)
+
+parseLog의 공통 예외 후처리 뒤 파일 문맥을 적용한다. 실제 service가 있으면 유지하고, 없을 때만 사용자가 입력한 serviceName으로 보완하며 serviceSource=file-setting을 남긴다. 시간대도 timestamp가 null이고 검증된 전체 rawTimestamp에 오프셋이 없을 때만 사용한다. 명시적 로그 오프셋과 IIS UTC는 우선한다. timeSource=log/format/file-setting 및 assumedTimezone를 기록해 가정과 원문을 분리한다. 원문과 parsedFields는 변경하지 않는다.
+
+IANA와 고정 오프셋은 @js-temporal/polyfill 0.5.1로 처리한다. PlainDateTime.from overflow=reject와 toZonedDateTime disambiguation=reject를 사용해 DST 중복/누락 시각을 앞뒤 시각으로 몰래 옮기지 않는다. 부분 시각/날짜 부재는 복원하지 않는다. timezone은 128자 이내이며 invalid setting은 재분석 전에 거절한다. 설정 해석 실패는 null+TIMEZONE_UNRESOLVED로 남긴다. IANA 규칙은 런타임 Intl 데이터에 의존하며 대표 사례 외 브라우저/역사 데이터는 미검증이다.
+
+파일 재분석은 기존 옵션과 명시적 변경을 합쳐 sources에서 수행한다. 빈 문자열로 가정을 해제할 수 있다. 오류가 나면 기존 events/metadata는 보존한다. 파일 색상은 SourceFile의 장식 메타데이터이며 이벤트 근거/추적 ID로 사용하지 않는다. 색상 변경은 재파싱하지 않는다.
+
+확인한 1차 자료: [Temporal polyfill package](https://github.com/js-temporal/temporal-polyfill/blob/main/package.json), [Temporal ZonedDateTime disambiguation](https://tc39.es/proposal-temporal/docs/zoneddatetime.html), [Temporal cookbook](https://tc39.es/proposal-temporal/docs/cookbook.html).
+
+## ADR-022 — 명시적 식별자와 typed/scoped 연관 (2026-11-12, 채택)
+
+텍스트는 root 로그 헤더의 이름 있는 key:value/key=value만 읽고 nested exception의 ID를 부모에 부여하지 않는다. 지원 키는 requestId/request_id/request-id/x-request-id, traceId/trace_id/trace-id, correlationId/correlation_id/correlation-id/x-correlation-id, spanId/span_id/span-id다. JSON은 실제 필드 별칭 또는 사용자 매핑 경로를 사용한다. 매핑은 own property 및 배열 인덱스만 탐색한다. IIS는 #Fields에 선언된 같은 의미의 custom 컬럼과 cs(X-Request-ID)만 사용한다. HTTP 상태·IP·이름 없는 UUID를 요청 ID로 추정하지 않는다. 텍스트 ID 충돌/256자 초과는 진단하고 자동 선택/절단하지 않는다. JSON 문자열은 보존하며 숫자를 문자열 ID로 강제 변환하지 않는다.
+
+키는 canonical tuple (kind, file-scope, trace-context, value)다. Request/Trace/Correlation/custom은 trace-context=null이고 Span은 실제 traceId도 문맥에 포함한다. 값의 대소문자나 타입 사이 관계를 임의 동치로 만들지 않는다. 사용자 scope는 파일 설정이며 로그에 없는 환경을 추정한 값이 아니다. 기본 scope가 같아도 실제 ID 재사용 가능성은 UI에서 안내한다. 동일 이벤트 ID는 한 번만 집계하고 다른 파일의 같은 내용은 별개 관측이다.
+
+## ADR-023 — 관측 타임라인과 검색 범위 (2026-11-12, 채택)
+
+Request Trace Explorer는 기본적으로 공통 필터 결과를 사용하며 전체 세션은 체크박스로 명시적으로 선택한다. 전체 모드는 검색/기간/레벨/파일 조건을 무시한다고 안내한다. 필터 pending/error 상태를 빈 결과처럼 표시하지 않는다. ID는 정확 일치로 검색하고 목록/시간순/미확인 목록은 50개 페이지로 표시한다. 명시적으로 선택한 그룹이 삭제되면 다른 ID로 몰래 바꾸지 않는다.
+
+유효한 정규화 시각만 stable sort로 시간축에 놓고 동률은 입력 순서를 유지한다. 미확인 시각은 별도 목록이다. 서비스 라벨은 실제 값 또는 명시적 파일 설정으로 표시한다. 이전 관측과의 간격·최초~최종 관측 간격만 계산하며 요청 처리시간/인과관계로 확정하지 않는다. 시계 오차·로그 누락·ID 재사용·parent/span 경계 부재를 안내하며 Span ID만으로 완전한 추적 트리를 만들지 않는다. 기존 검색/통계/예외 엔진은 새 정규화 이벤트를 그대로 재사용한다. 내보내기는 Phase 8에 남긴다.

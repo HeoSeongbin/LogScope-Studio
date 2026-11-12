@@ -54,3 +54,13 @@ UI: 새 업로드 형식 선택, 파일별 파서 변경, JSON 매핑 적용과 
 추가 검증: 빈 입력/null 비율, 서비스/Logger 미기록, 파일 ID별 구분, 중복 ID만 제외, HTTP 4xx/5xx 독립, 필터·원본 불변, UTC/오프셋/음수 epoch/inclusive 기간과 half-open 버킷, 빈 구간, 시각 이상값, 2,000개 버킷·표현 범위 제한, 집중 지표별 기준, 실제 chart 데이터 라벨/값.
 
 Node File 업로드→Generic 재분석→제거 후 통계/차트 데이터 갱신·원문 보존을 검증한다. jsdom은 Dashboard/Timeline 전환, 필터 공유, 구간/원본 선택, 파일 통계 탐색, 기준 오류와 빈 데이터를 검증한다. UI의 Canvas wrapper는 mock이므로 실제 Canvas·차트 클릭/레이아웃·접근성·Pages E2E를 통과한 것으로 간주하지 않는다.
+
+## Phase 6 검증 (2026-11-12)
+
+타입 검사/ESLint/Production Build 통과, Vitest 13개 파일·136개 테스트 통과 (기존 115개 포함). 빌드에 메인 chunk 약 650 kB 경고가 있으며 Phase 7 최적화 항목으로 기록했다.
+
+API 4개·DB 3개 정규화 이벤트 중 req-demo-001은 6개다. DB 파일 UTC 설정 후 시간순 5개/미확인 1개, 관측 간격 4030ms, ERROR 2개를 검증했다.
+
+추가 범위: MDC Thread 비혼동, 명시적 Java/.NET/JSON/IIS ID, custom JSON/배열 경로, 충돌/긴 ID/숫자/타입·scope·case 분리, Span Trace 문맥, nested stack ID 비상속, IANA/고정 offset·명시 로그 offset 우선·IIS UTC·DST gap/overlap reject·invalid calendar/zone·시각 부재.
+
+Node File 업로드/설정/재분석/색상/제거/초기화 및 원문/기존 상태의 원자적 보존을 확인했다. jsdom은 Trace 화면·서비스/시간 근거·ID 정확 검색·전체 세션 선택·원본 위치·설정 오류/해제·선택 그룹 삭제를 검증한다. 실제 브라우저/시간대 환경/모바일·접근성·Pages·대용량/청크 스트리밍은 미검증이다.

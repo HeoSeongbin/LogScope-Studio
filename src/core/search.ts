@@ -7,7 +7,7 @@ export const MAX_REGEX_ROW_CHARS=131072;
 export const MAX_REGEX_TOTAL_CHARS=16*1024*1024;
 export const MAX_HIGHLIGHT_RANGES=20000;
 export function searchRow(event:LogEvent):SearchRow {
-  return {id:event.id,message:event.message,fields:[event.rawText,event.message,event.logger,event.thread,event.service,event.requestId,event.traceId,event.sourceFileName].filter((value):value is string=>value!==undefined)};
+  return {id:event.id,message:event.message,fields:[event.rawText,event.message,event.logger,event.thread,event.service,event.requestId,event.traceId,event.correlationId,event.spanId,event.customId,event.sourceFileName].filter((value):value is string=>value!==undefined)};
 }
 export function literalTerms(query:string):string[]{
   return Array.from(query.matchAll(/"([^"]+)"|(\S+)/g),match=>match[1]??match[2]);

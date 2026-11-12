@@ -4,8 +4,15 @@ import { readFileSync } from 'node:fs';
 import { useWorkspace, MAX_FILE_BYTES } from '../stores/workspace';
 import { groupExceptions } from '../core/exceptions/groups';
 import { aggregateStatistics, buildTimeline } from '../core/statistics';
+import { collectTraces, buildTrace } from '../core/correlation/trace';
 afterEach(()=>useWorkspace.getState().reset());
 describe('file lifecycle',()=>{
+  it('maintains actual trace identity and provenance across file configuration, reparse, removal and reset',async()=>{
+    const api=readFileSync('public/samples/distributed-api.log','utf8'),db=readFileSync('public/samples/distributed-db.log','utf8');await useWorkspace.getState().upload([new File([api],'api.log')],{serviceName:'api'});await useWorkspace.getState().upload([new File([db],'db.log')]);const state=useWorkspace.getState(),id=state.files[1].id;
+    const group=()=>collectTraces(useWorkspace.getState().events,'requestId').find(group=>group.value==='req-demo-001')!;expect(buildTrace(group()).timed).toHaveLength(3);state.reparse(id,{timezone:'UTC',serviceName:'db'});expect(buildTrace(group()).timed).toHaveLength(5);expect(buildTrace(group()).untimed).toHaveLength(1);expect(useWorkspace.getState().sources[id]).toBe(db);
+    const before=useWorkspace.getState().events;expect(()=>state.reparse(id,{timezone:'Bad/Zone'})).toThrow();expect(useWorkspace.getState().events).toBe(before);state.setFileColor(id,'#ff0000');expect(useWorkspace.getState().events).toBe(before);expect(useWorkspace.getState().files[1].color).toBe('#ff0000');
+    state.reparse(id,{parser:'serilog'});expect(useWorkspace.getState().files[1].timezone).toBe('UTC');state.reparse(id,{correlationScope:'other'});expect(collectTraces(useWorkspace.getState().events,'requestId').filter(group=>group.value==='req-demo-001')).toHaveLength(2);state.remove(id);expect(group().events).toHaveLength(3);expect(useWorkspace.getState().sources[id]).toBeUndefined();state.reset();expect(collectTraces(useWorkspace.getState().events,'requestId')).toEqual([]);
+  });
   it('recomputes statistics and timeline after real file upload, reparse and removal',async()=>{
     const text=readFileSync('public/samples/statistics-demo.jsonl','utf8');await useWorkspace.getState().upload([new File([text],'stats.jsonl'),new File(['INFO other'],'other.log')]);const state=useWorkspace.getState();const id=state.files[0].id;
     expect(aggregateStatistics(state.events).summary).toMatchObject({total:13,errors:5,exceptions:3});expect(buildTimeline(state.events,'1m').buckets).toHaveLength(5);

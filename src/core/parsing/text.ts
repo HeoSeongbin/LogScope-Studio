@@ -1,11 +1,11 @@
 import type { LogEvent, LogInput, LogParser } from '../../types/log';
 import { applyTimestamp, baseEvent, genericEvent, normalizeLevel, sourceLines, timestampPattern, type SourceLine } from './common';
 
-const springLine=new RegExp(`^(${timestampPattern})\\s+(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\\s+(\\d+)\\s+---\\s+(?:\\[[^\\]]+\\]\\s+)?\\[([^\\]]+)\\]\\s+([^\\s]+)\\s*:\\s?(.*)$`);
+const springLine=new RegExp(`^(${timestampPattern})\\s+(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\\s+(\\d+)\\s+---\\s+((?:\\[[^\\]]+\\]\\s+)+)([^\\s]+)\\s*:\\s?(.*)$`);
 // Explicitly supported PatternLayout variants; arbitrary user templates are not guessed.
 const javaPatterns=[
-  new RegExp(`^(${timestampPattern})\\s+\\[([^\\]]+)\\]\\s+(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\\s+([\\w.$]+)\\s+(?:-|:)\\s?(.*)$`),
-  new RegExp(`^(${timestampPattern})\\s+(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\\s+\\[([^\\]]+)\\]\\s+([\\w.$]+)\\s+(?:-|:)\\s?(.*)$`),
+  new RegExp(`^(${timestampPattern})\\s+\\[([^\\]]+)\\]\\s+(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\\s+(?:\\[[^\\]]*[:=][^\\]]*\\]\\s+)?([\\w.$]+)\\s+(?:\\[[^\\]]*[:=][^\\]]*\\]\\s+)?(?:-|:)\\s?(.*)$`),
+  new RegExp(`^(${timestampPattern})\\s+(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\\s+\\[([^\\]]+)\\]\\s+(?:\\[[^\\]]*[:=][^\\]]*\\]\\s+)?([\\w.$]+)\\s+(?:\\[[^\\]]*[:=][^\\]]*\\]\\s+)?(?:-|:)\\s?(.*)$`),
 ];
 const serilogLine=new RegExp(`^(?:(${timestampPattern})\\s+)?\\[(VRB|DBG|INF|WRN|ERR|FTL)\\]\\s?(.*)$`);
 const serilogConsole=/^\[(\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?) (VRB|DBG|INF|WRN|ERR|FTL)\]\s?(.*)$/;
@@ -15,8 +15,10 @@ function rows(input:LogInput,parse:(line:SourceLine)=>LogEvent|undefined,expecte
 }
 export function parseSpringLine(input:LogInput,line:SourceLine){
   const match=line.raw.match(springLine);if(!match)return;
-  const [,time,level,pid,thread,logger,message]=match;
-  const event={...baseEvent(input,line),parserId:'spring',level:normalizeLevel(level),thread:thread.trim(),logger,message,parsedFields:{pid:Number(pid)}};
+  const [,time,level,pid,blocks,logger,message]=match;
+  const contexts=Array.from(blocks.matchAll(/\[([^\]]+)\]/g),match=>match[1]).filter(block=>!/(?:request[_-]?id|trace[_-]?id|correlation[_-]?id|span[_-]?id)\s*[:=]/i.test(block));
+  const event={...baseEvent(input,line),parserId:'spring',level:normalizeLevel(level),thread:contexts.length<=2?contexts.at(-1)?.trim():undefined,logger,message,parsedFields:{pid:Number(pid)}};
+  if(contexts.length>2)(event.parseWarnings??=[]).push('THREAD_CONTEXT_AMBIGUOUS: 여러 bracket 문맥의 Thread를 확정할 수 없습니다.');
   applyTimestamp(event,time);return event;
 }
 export function parseJavaLine(input:LogInput,line:SourceLine){

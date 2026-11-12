@@ -1,78 +1,82 @@
 # 개발 진행
 
-현재 Phase: **Phase 5 통계 및 시계열 분석 구현·자동 검증 완료** (2026-11-12).
-다음 Phase: **Phase 6 다중 파일 및 요청 추적**. 실제 브라우저 Canvas/E2E·Pages 배포·대용량 성능 검증은 완료 처리하지 않았다.
+현재 Phase: **Phase 6 다중 파일 및 요청 추적 구현·자동 검증 완료** (2026-11-12).
+다음 Phase: **Phase 7 성능 최적화**. 실제 브라우저·Pages 배포·대용량/스트리밍 검증은 완료 처리하지 않았다.
 
 ## 시작 상태 확인
 
-AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 실제 소스·Git 상태를 확인했다. Phase 4 기록과 코드가 일치했고 기존 9개 파일/93개 테스트가 통과했다. Git main은 Phase 3·4 로컬 커밋으로 origin/main보다 2개 앞섰으며 시작 시 작업 트리는 깨끗했다. 이번에는 Phase 5만 구현하고 새 커밋/푸시는 수행하지 않았다.
+AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 실제 소스·Git을 확인했다. Phase 5 코드와 기록이 일치했고 기존 11개 파일/115개 테스트가 통과했다. main은 Phase 3·4·5 로컬 커밋으로 origin/main보다 3개 앞섰으며 작업 트리는 깨끗했다. 이번에는 Phase 6만 구현하고 새 커밋/푸시는 수행하지 않았다.
 
-이력: Phase 0·1 기반 → Phase 2 다중 포맷(44e7b2f 게시) → Phase 3 검색/필터(1e7c9cd 로컬) → Phase 4 예외 분석(b504c6c 로컬) → Phase 5 통계·시계열.
+이력: Phase 2 44e7b2f 게시 → Phase 3 1e7c9cd → Phase 4 b504c6c → Phase 5 1f5c9a5 로컬 커밋 → Phase 6 요청 추적.
 
 ## 구현 내용
 
-- 순수 통계 엔진: 레벨별 건수, ERROR+FATAL 건수/전체 이벤트 비율, root 예외 이벤트, IIS HTTP 4xx/5xx 독립 집계
-- 파일 ID·실제 서비스·Logger별 집계. 없는 필드는 null 그룹으로 유지하고 UI에서만 미기록 안내
-- 상위 ERROR/FATAL 메시지, 기존 fingerprint 기반 상위 예외 그룹 및 root 타입별 발생 분포
-- 동일 이벤트 ID만 중복 제외. 내용이 같아도 다른 파일의 이벤트는 각각 관측값으로 집계
-- UTC epoch 기준 1분/5분/1시간/1일 버킷, 내부 빈 구간 0건 유지, 실제 관측 시각 범위 밖으로 임의 확장하지 않음
-- 시각 없는 이벤트는 전체 통계/분모에 포함하되 차트와 시간 구간에서는 제외, 개수 별도 표시
-- 집중 구간: 선택 지표(ERROR+FATAL / HTTP 5xx / 예외), 최소 건수·최소 비율의 관측 기준. 기준/분모를 표시하고 원인·이상치로 확정하지 않음
-- Dashboard 화면: 필터 결과 지표, 시간 추이·레벨·서비스 오류 차트, 상위 메시지/예외, 파일/서비스/Logger 표
-- Timeline Analyzer: 동일 시간 차트와 관측 기준, 구간별 데이터 표, 구간 선택 이벤트/레벨 분포와 원본 상세 연결
-- 공통 검색·기간·레벨·파일 필터와 정렬·선택/원본 상세 유지. 파일별 통계 버튼으로 Explorer 전환
-- Chart.js 4.6.1 / react-chartjs-2 5.3.1 번들 통합. 필요한 scale/element/plugin 등록, 로컬 category 축·UTC 라벨 사용, 외부 API/폰트/CDN 호출 없음
-- charts 수치와 동일한 데이터 표 및 구간 선택 버튼 제공. Canvas를 클릭할 수 없는 환경에서도 데이터 조회 가능
-- 가상 statistics-demo.jsonl 샘플 1종과 선택 UI 추가
+- Request/Trace/Correlation/Span ID를 서로 구분해 실제 명시적 필드/이름 있는 key-value에서만 추출
+- Spring MDC bracket에서 식별자를 읽되 Thread와 혼동하지 않도록 분리, Java 패턴의 명시적 MDC bracket 지원
+- .NET/Serilog/Generic 첫 로그 헤더의 명시적 ID key-value 지원. Stack Trace 자식 행에서 다른 ID를 빌리지 않음
+- JSON 별칭·Correlation/Span/custom ID 수동 매핑, own property 경로 및 배열 인덱스 경로 지원. 숫자를 ID로 강제 변환하지 않음
+- IIS #Fields에 실제 선언된 request-id/trace-id/cs(X-Request-ID) 등 custom ID 컬럼 지원. HTTP 상태/IP를 ID로 추정하지 않음
+- 같은 텍스트 타입의 여러 값이 충돌하거나 256자를 초과하면 ID를 선택/절단하지 않고 진단 보존
+- 파일별 시간대/서비스명/식별자 연결 범위와 색상 설정. parser/JSON 매핑 변경 시 기존 파일 설정을 유지하고 빈 값으로 명시적 해제
+- 시간대 없는 전체 날짜에만 사용자 IANA/고정 오프셋 적용. 원문 오프셋·실제 서비스·IIS UTC는 우선 보존
+- Temporal polyfill 0.5.1로 DST 중복/누락 시각 reject. 잘못된 달력·부분 시각·날짜 부재를 임의 보정하지 않음
+- serviceSource/timeSource/assumedTimezone로 로그/형식/파일 설정 근거를 분리. 원문·parsedFields 변경 없음
+- 정확한 (ID 타입, 사용자 연결 범위, 값) 그룹. Span은 실제 Trace ID 문맥도 같아야 연결. 대소문자·다른 타입·범위를 임의 동치로 만들지 않음
+- Request Trace Explorer: ID 타입/정확값 검색, 현재 공통 필터 또는 명시적 전체 세션, 서비스/파일별 관측 흐름, 오류 강조, 원본 선택
+- 정규화 시각 순서와 동률 입력 순서, 미확인 시각의 별도 목록, 관측 간격만 계산하고 요청 처리시간/인과관계/완전한 Span 트리로 확정하지 않음
+- 현재 검색이 pending/error여도 전체 세션 모드는 명시적으로 선택 가능. 선택했던 그룹 삭제 시 다른 ID로 몰래 대체하지 않음
+- 가상 distributed-api.log / distributed-db.log 샘플 2종 추가
 
 ## 실제 검증 결과 (2026-11-12)
 
 - `npm run typecheck`: 통과
 - `npm run lint`: 통과
-- `npm test`: **11개 파일·115개 테스트 통과**, 기존 93개 포함
-- `npm run build`: 통과, 정적 차트 라이브러리 및 기존 검색 Worker 산출물 생성
-- 실제 가상 샘플 12개 이벤트: ERROR 4/FATAL 1/WARN 1/INFO 3/DEBUG 1/TRACE 1/UNKNOWN 1, 오류 비율 5/12, 예외 3개
-- 정규화 시각 10개/없음 2개. 1분 버킷 총건수 [2,5,0,1,2], ERROR+FATAL [0,4,0,0,0]. 집중 구간 05:31 UTC는 4/5=80%
-- UTC/다른 오프셋·음수 epoch·inclusive 전체 기간/half-open 버킷 경계·누락/유효하지 않은 시각·빈 입력·최대 버킷/날짜 범위 오류 검증
-- 중복 ID만 제외, 같은 파일명/다른 파일 ID 분리, 서비스 미기록 보존, HTTP 상태와 severity/예외 구분, 필터 적용·원문 불변 검증
-- Node File 실제 업로드/Generic 재분석/파일 제거 후 통계와 타임라인 갱신·원문 보존 검증
-- chart 데이터 변환에서 실제 UTC 라벨과 관측 수치 전달 검증
-- jsdom UI: Dashboard/Timeline 이동, 실제 건수·비율, 공통 필터, 구간 선택→원본 위치, 파일별 탐색, 버킷 변경·기준 오류·빈 데이터 검증
-- UI 테스트의 Canvas 래퍼는 mock으로 대체했다. 실제 Canvas 페인팅/차트 클릭 브라우저 E2E·반응형 시각 검사·Pages 배포·대용량 성능은 **미검증**
+- `npm test`: **13개 파일·136개 테스트 통과**, 기존 115개 회귀 포함
+- `npm run build`: 통과. Temporal 추가로 메인 chunk 약 650 kB / gzip 약 206 kB, 500 kB 기준 경고 발생. 경고 한도를 높여 숨기지 않았음
+- 실제 API 샘플 6줄 → 4개 이벤트, DB 샘플 5줄 → 3개 이벤트. req-demo-001은 파일 간 6개 이벤트
+- DB 파일 UTC·서비스 설정 후 해당 요청의 시간순 5개 + 미확인 시각 1개, 최초~최종 관측 간격 4030ms, ERROR 2개. 누락/다른 request ID를 생성하지 않음
+- MDC/Java/.NET/JSON/IIS 명시적 ID·충돌·긴 값·숫자·중첩 스택 비상속·타입/범위/대소문자 분리·Span Trace 문맥 검증
+- 파일 IANA/고정 오프셋, 원문 오프셋 우선, IIS UTC, DST 중복/누락 거절, invalid zone/calendar, 부분/누락 시각 검증
+- Node File 실제 업로드·재분석·설정 유지/해제·무효 설정 원자적 거절·색상 변경 시 이벤트 불변·제거·초기화 검증
+- jsdom Trace Explorer의 파일 간 목록·시각 분리·원본 위치·ID 타입/정확값·전체 세션·공통 필터·설정 오류/적용·선택 그룹 삭제 검증
+- 실제 브라우저 E2E·시각/모바일/접근성·IANA 환경 호환성 실측·Pages 배포·대용량/청크 경계 성능은 **미검증**
 
 ## 발견 및 해결한 문제
 
-- 전체 세션 수치만 있었음 → 필터 결과와 전체 세션 표시를 구분하고 Dashboard에 결과 통계 추가
-- HTTP 500·ERROR 레벨·Exception을 섞으면 분모/합계가 잘못될 위험 → 독립 지표와 계산식 명시, 합산하지 않음
-- 시각 없는 오류를 임의 시간에 놓을 위험 → 전체 통계와 시간 차트 범위 구분
-- 긴 관측 범위에서 버킷 배열이 무한히 커질 위험 → 2,000개 한도와 명시적 오류, 거친 해상도/좁은 기간 안내
-- 버킷 계산 실패를 집중 구간 없음으로 보일 위험 → 계산하지 않았다고 안내
-- 차트 파일의 비컴포넌트 export Fast Refresh 경고 → 순수 차트 데이터 함수를 core로 이동, 최종 ESLint 경고 없음
-- npm 설치가 샌드박스 네트워크에서 실패 → 사용자 승인 후 설치 완료
+- 시간대 없는 로그를 파일 간 비교할 수 없었음 → 명시적 사용자 시간대 설정과 근거 표시, DST ambiguity reject
+- 원문 서비스와 사용자 라벨을 섞을 위험 → 실제 로그 필드 우선·누락 시 fallback·serviceSource 표시
+- MDC bracket이 Thread로 잘못 파싱될 위험 → 명시적 ID bracket 분리, 문맥이 과도하면 Thread 미확인 진단
+- ID가 같은 문자열이라는 이유로 다른 타입/범위를 합칠 위험 → typed/scoped tuple 및 Span의 실제 Trace 문맥
+- Stack Trace 자식의 ID가 부모에 붙을 위험 → 첫 root 로그 헤더만 텍스트 추출
+- 재분석에서 파일 설정이 사라질 위험 → 기존 옵션과 변경 옵션을 합쳐 원문에서 재파싱
+- DST 실패 후 기존 시간대 미지정 경고가 부정확해질 위험 → 해당 경고를 실제 설정 해석 불가 진단으로 교체
+- 잘못된 시간대 설정은 원문/기존 이벤트/파일 메타데이터를 바꾸지 않고 거절
 
 ## 알려진 제약 / 미완료
 
-- 차트는 최대 2,000개 버킷. 초과 시 값을 자르거나 자동으로 해상도를 바꾸지 않고 오류 표시
-- 관측 범위 안의 0건 구간은 입력 로그에 이벤트가 없다는 뜻이며 실제 서비스 무장애/미실행을 증명하지 않음
-- 일 단위도 UTC 고정 24시간 버킷. 파일별 시간대 지정·DST 현지 일 경계는 Phase 6 이후 검토
-- 집중 구간은 기본 최소 3건·30%의 사용자 관측 기준, 상위 10개 표시. 자동 이상치 탐지/원인 분석은 미구현
-- 차트에 표시되는 예외·ERROR/FATAL·HTTP 지표는 겹칠 수 있음. 덧셈 가능한 배타적 카테고리가 아님
-- 서비스 차트는 전체 이벤트 수 상위 10개 서비스, 상위 오류/예외는 10개, 타입 표는 20개, 차원 표는 20개 페이지, 버킷 표는 50개 페이지
-- 파일별 표는 현재 결과에 포함된 파일을 sourceFileId로 집계. 업로드됐으나 결과 이벤트가 없는 파일은 이 표에 나타나지 않음
-- HTTP 집계는 기존 IIS W3C의 유효 sc-status만 사용. 임의 JSON 필드의 HTTP 의미를 추측하지 않음
-- 통계·버킷·파일 파싱은 메인 스레드. 파일당 2 MiB/세션 8 MiB 한도 유지, 파싱 Worker/스트리밍/성능 측정은 Phase 7
-- 기존 Phase 3 검색·Phase 4 Stack Trace 지원 문법/진단 한도 유지
-- 설치 시 npm이 moderate 10건을 보고함. 상세 재감사/강제 의존성 변경은 하지 않았음
+- 텍스트의 명시적 key:value/key=value와 지원 MDC 패턴만 읽음. 이름 없는 MDC 값/임의 UUID·숫자는 의미를 추정하지 않음
+- 같은 ID의 재사용/시계 오차/부분 로그만으로 인과관계·완전한 요청 수명·Span parent 구조를 보장하지 않음
+- ID 값은 case-sensitive exact match. 타입 사이 전이 연결이나 자동 aliasing 없음. 환경/테넌트가 다르면 사용자가 파일 연결 범위를 지정해야 함
+- 사용자 지정 ID는 JSON 명시적 필드 매핑으로만 지원. arbitrary regex/code 실행 없음
+- 파일 서비스명은 로그에 service가 없을 때만 적용. 시간대는 full date의 오프셋 없는 값에만 적용. 날짜 없는 시각·유효하지 않은 시각은 null 유지
+- IANA 해석은 실행 환경의 Intl 시간대 데이터에 의존. 대표 DST 사례는 Node 자동 검증했지만 모든 지역/역사 시각·브라우저를 실측하지 않음
+- 시간대 설정은 정규화 가정이며 원문 변경/자동 서버 시계 보정이 아님. UTC 통계 버킷과 실제 프로세스의 현지 일/DST 정책은 별개
+- ID/시간순/미확인 목록은 각각 50개 페이지. 처음에는 목록의 첫 그룹을 표시하며 명시적으로 고른 그룹이 사라지면 재선택 안내
+- 추적 결과 다운로드는 Phase 8의 내보내기 범위로 남김. 현재 지원한다고 표시하지 않음
+- 파싱/ID 색인/타임라인 계산은 메인 스레드. 파일당 2 MiB/세션 8 MiB 보호 한도 유지, 메모리/성능 한도 미측정
+- Temporal 도입 후 bundle 크기 경고가 있음. 코드 분할/파싱 Worker·스트리밍·성능 측정은 Phase 7
+- npm 설치 시 moderate 10건 보고. 상세 재감사/강제 의존성 변경은 미실행
 
 ## 변경 파일
 
-- 엔진: src/core/statistics.ts, src/core/statistics-chart.ts
-- UI: src/app/StatisticsDashboard.tsx, src/app/StatisticsCharts.tsx, src/app/App.tsx, src/style.css
-- 샘플: public/samples/statistics-demo.jsonl
-- 테스트: src/tests/statistics.test.ts, src/tests/statistics-ui.test.tsx, src/tests/workspace.test.ts
+- 모델/파서: src/types/log.ts, src/core/parsers.ts, src/core/parsing/json.ts, text.ts, src/core/search.ts
+- 신규 엔진: src/core/file-context.ts, src/core/correlation/identifiers.ts, trace.ts
+- 상태/UI: src/stores/workspace.ts, src/app/FileParserSettings.tsx, TraceExplorer.tsx, App.tsx, src/style.css
+- 샘플: public/samples/distributed-api.log, distributed-db.log
+- 테스트: src/tests/correlation.test.ts, trace-ui.test.tsx, workspace.test.ts
 - 문서: README.md, docs/PROGRESS.md, DECISIONS.md, ARCHITECTURE.md, TEST-CASES.md
-- 의존성/버전: package.json, package-lock.json → 0.5.0
+- 의존성/버전: @js-temporal/polyfill 0.5.1, package.json/package-lock.json → 0.6.0
 
 ## 다음 작업
 
-Phase 6: 파일별 시간대/서비스 설정, 실제 Request/Trace/Correlation 식별자 추출·구분, 여러 파일·서비스 요청 타임라인 및 관련 원본 탐색. 동일 시각과 인과관계를 구분하고 시계 오차·로그 누락 가능성을 안내한다. 기존 파서·예외·검색·통계 회귀 테스트를 보존한다.
+Phase 7: 파싱 Worker와 청크 디코더, 행·Stack 상태 유지/청크 불변성, 진행률/취소/늦은 응답 무시, 이벤트/메모리 한도·검색/집계 비용 및 번들 분할, 1/10/50 MB 실제 성능 측정. 기존 파서·예외·검색·통계·추적의 원본/ID/타임존 정확성을 회귀 검증한다.

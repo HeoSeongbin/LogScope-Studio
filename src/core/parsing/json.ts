@@ -7,8 +7,8 @@ function ownPath(object:Record<string,unknown>,path:string):unknown {
   if(Object.hasOwn(object,path))return object[path];
   let current:unknown=object;
   for(const part of path.split('.')){
-    if(!isObject(current)||!Object.hasOwn(current,part))return undefined;
-    current=current[part];
+    if((!isObject(current)&&!Array.isArray(current))||!Object.hasOwn(current,part))return undefined;
+    current=(current as Record<string,unknown>)[part];
   }
   return current;
 }
@@ -18,6 +18,9 @@ const fields:Record<MappingField,string[]>={
   message:['message','msg','renderedMessage','Message','RenderedMessage','@m','MessageTemplate','@mt','State.Message'],
   requestId:['requestId','request_id','RequestId','Properties.RequestId'],
   traceId:['traceId','trace_id','TraceId','@tr','Properties.TraceId'],
+  correlationId:['correlationId','correlation_id','CorrelationId','Properties.CorrelationId'],
+  spanId:['spanId','span_id','SpanId','@sp','Properties.SpanId'],
+  customId:[],
 };
 function first(object:Record<string,unknown>,paths:string[]){for(const path of paths){const value=ownPath(object,path);if(value!==undefined&&value!==null)return value;}}
 function stringValue(value:unknown){return typeof value==='string'?value:undefined;}
@@ -42,13 +45,11 @@ export function jsonRecord(input:LogInput,line:SourceLine,value:unknown,options:
   else warn('MESSAGE_MISSING: 문자열 메시지 필드를 찾지 못해 원문을 표시합니다.');
   if(!options.fieldMapping?.message&&value['@m']===undefined&&value.RenderedMessage===undefined&&(value['@mt']!==undefined||value.MessageTemplate!==undefined))warn('MESSAGE_TEMPLATE: 렌더링되지 않은 메시지 템플릿을 그대로 표시합니다.');
   applyTimestamp(event,mapped('timestamp'));
-  for(const field of ['requestId','traceId'] as const){const v=mapped(field);if(typeof v==='string')event[field]=v;else if(v!==undefined&&v!==null)warn(`FIELD_TYPE: ${field}는 문자열이어야 합니다.`);}
+  for(const field of ['requestId','traceId','correlationId','spanId','customId'] as const){const v=mapped(field);if(typeof v==='string')event[field]=v;else if(v!==undefined&&v!==null)warn(`FIELD_TYPE: ${field}는 문자열이어야 합니다.`);}
   event.service=firstString(value,['service','service.name','Service','Properties.Service']);
   event.host=firstString(value,['host','host.name','Host','MachineName','Properties.MachineName']);
   event.logger=stringValue(first(value,['logger','SourceContext','Category','Properties.SourceContext']));
   event.thread=stringValue(first(value,['thread','ThreadName','Properties.ThreadName']));
-  event.spanId=stringValue(first(value,['spanId','span_id','SpanId','@sp','Properties.SpanId']));
-  event.correlationId=stringValue(first(value,['correlationId','CorrelationId','Properties.CorrelationId']));
   const exception=first(value,['exception','Exception','@x']);
   if(exception!==undefined){const analysis=structuredException(exception);event.exception=analysis.exception;for(const warning of analysis.warnings)warn(warning);}
   return event;

@@ -1,6 +1,6 @@
 {
   "name": "logscope-studio",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Browser-local log analysis workspace",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@js-temporal/polyfill": "^0.5.1",
     "chart.js": "^4.6.1",
     "lucide-react": "^1.71.0",
     "react": "^19.3.1",

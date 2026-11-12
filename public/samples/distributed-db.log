@@ -1,0 +1,5 @@
+2026-11-06 05:30:01.200 [INF] requestId=req-demo-001 traceId=trace-demo-001 correlationId=flow-demo-001 spanId=span-db-1 Query started
+2026-11-06 05:30:03.220 [ERR] requestId=req-demo-001 traceId=trace-demo-001 correlationId=flow-demo-001 spanId=span-db-1 Query timed out
+System.TimeoutException: Demo query timeout
+   at Demo.Storage.Query() in C:\demo\Storage.cs:line 22
+[WRN] requestId=req-demo-001 traceId=trace-demo-001 correlationId=flow-demo-001 spanId=span-db-1 Follow-up without a timestamp

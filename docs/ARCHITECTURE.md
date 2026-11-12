@@ -81,3 +81,25 @@ flowchart LR
 ```
 
 statistics.ts는 순수 집계·버킷·구간 함수, statistics-chart.ts는 수치→차트 데이터 변환이다. StatisticsDashboard는 동일 데이터를 Dashboard/Timeline으로 표시하고 StatisticsCharts는 필요한 Chart.js 구성만 등록한다. 외부 로그 요청과 저장은 없다. 기존 파서·원본 저장소·검색 Worker는 변경하지 않았다. 필터 결과 참조가 바뀔 때 계산하며 원본 선택만으로 전체 통계를 재계산하지 않는다. 메인 스레드 집계/파싱의 대용량 최적화는 Phase 7이다.
+
+## Phase 6 파일 문맥과 요청 추적
+
+```mermaid
+flowchart LR
+  Original[원본 sources] --> Parse[기존 파서·예외 후처리]
+  Parse --> IDs[실제 명시적 ID 추출]
+  FileSettings[사용자 파일 시간대·서비스·scope] --> Context[문맥 적용·근거 표시]
+  IDs --> Context
+  Context --> Events[정규화 이벤트]
+  Events --> Shared[기존 검색·통계·예외]
+  Events --> Session[전체 세션]
+  Shared --> Typed[typed/scoped exact ID 그룹]
+  Session --> Typed
+  Typed --> Time[정규화 시각 stable sort]
+  Typed --> Unknown[미확인 시각 별도 목록]
+  Time --> Trace[Trace Explorer·서비스/파일 표시]
+  Unknown --> Trace
+  Trace --> Detail[선택 원본·줄 범위·가정 근거]
+```
+
+file-context.ts는 로그/형식/사용자 설정의 근거와 Temporal 시간 해석을 분리한다. correlation/identifiers.ts는 명시적 키만 읽고 trace.ts는 typed/scoped 그룹과 관측 시간 목록을 만든다. SourceFile 설정을 보존한 재파싱이므로 ID/원본 위치는 바뀌지 않으며 파일 제거/초기화가 모든 파생 결과에 반영된다. 별도 원격 API/영구 저장은 없다. 통계는 파일 설정으로 해석된 epoch도 포함하지만 UTC 버킷 정책은 그대로다. 파싱/그룹 계산 Worker와 번들 분할은 Phase 7에서 수행한다.
