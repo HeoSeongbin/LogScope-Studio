@@ -1,4 +1,4 @@
-# Phase 2 아키텍처
+# 파싱 및 검색 아키텍처
 
 ```mermaid
 flowchart LR
@@ -24,4 +24,24 @@ Zustand는 decoded original sources와 normalized events를 분리한다. 파일
 
 JSON 배열의 각 값은 원문 문자 범위를 스캔해 재직렬화 없이 잘라낸다. ID에 문자 오프셋을 포함해 같은 줄의 여러 객체를 구분하며 줄 번호는 원문 위치로 계산한다. JSON 배열 구분자와 IIS 지시문은 원본 저장소에 남지만 이벤트 건수에는 포함하지 않는다. 잘못된 지시문은 진단 가능한 실패 이벤트로 보존한다.
 
-Web Worker, 검색, 가상 스크롤, 예외 fingerprint, 추적 엔진은 후속 Phase다. 현재 파일당 2 MiB·세션당 8 MiB 보호 한도를 유지한다. 원본 텍스트와 이벤트 rawText를 함께 보관하므로 실제 메모리 사용량은 파일 바이트 합보다 크다.
+Phase 2 시점에 남겨둔 검색·가상 스크롤은 아래 Phase 3 경로로 확장했다. 파싱 Worker, 예외 fingerprint, 추적 엔진은 후속 Phase다. 현재 파일당 2 MiB·세션당 8 MiB 보호 한도를 유지한다. 원본 텍스트와 이벤트 rawText를 함께 보관하므로 실제 메모리 사용량은 파일 바이트 합보다 크다.
+
+## Phase 3 검색 경로
+
+```mermaid
+flowchart LR
+  Events[정규화 이벤트] --> Filters[파일/레벨/시간/Logger/Thread]
+  Filters --> Sort[안정 정렬]
+  Sort --> Literal[일반 문자열 검색]
+  Sort --> Worker[검색 전용 Worker]
+  Query[적용된 검색식] --> Literal
+  Query --> Worker
+  Worker --> Watchdog[UI watchdog / 취소 / 종료]
+  Literal --> Results[현재 파생 결과]
+  Worker --> Results
+  Results --> Window[고정 높이 가상 범위]
+  Window --> Rows[보이는 이벤트 행]
+  Results --> Details[원본/정규화 상세 및 안전한 강조]
+```
+
+검색 구현은 src/core/search.ts, 기간/정렬은 filter.ts, Worker 수명주기는 regex-client.ts, React 파생 결과 수명은 useExplorerSearch.ts로 분리한다. 임의 정규식은 검색 Worker 외부에서 실행하지 않는다. 파일 파서/원본 저장소는 변경하지 않았으며 검색 결과는 저장·전송하지 않는다. 일반 검색과 필터/정렬은 현재 메인 스레드에서 수행한다. Phase 7 파싱 Worker와 스트리밍 전환은 아직 미구현이다.

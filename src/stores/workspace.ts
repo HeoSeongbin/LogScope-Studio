@@ -1,19 +1,24 @@
 import { create } from 'zustand';
 import { parseLog } from '../core/parsers';
 import type { LogEvent, LogLevel, SourceFile, ParseOptions } from '../types/log';
+import { defaultFilters, defaultSearch, type ExplorerFilters, type SearchOptions } from '../types/search';
 export const MAX_FILE_BYTES=2*1024*1024;
 export const MAX_SESSION_BYTES=8*1024*1024;
 interface Workspace {
+  search: SearchOptions; filters: ExplorerFilters; sessionVersion:number;
+  setExplorer:(search:SearchOptions,filters:ExplorerFilters)=>void;
   sources: Record<string,string>;
   files: SourceFile[]; events: LogEvent[]; selectedId: string | null; selectedLevels: LogLevel[]; fileId: string;
   upload: (files: File[],options?:ParseOptions)=>Promise<void>; reparse:(id:string,options:ParseOptions)=>void; remove:(id:string)=>void; reset:()=>void;
   select:(id:string)=>void; toggleLevel:(level:LogLevel)=>void; setFile:(id:string)=>void;
 }
 export const useWorkspace=create<Workspace>((set,get)=>({
+  search:{...defaultSearch},filters:{...defaultFilters},sessionVersion:0,
+  setExplorer:(search,filters)=>set({search,filters}),
   sources:{},files:[],events:[],selectedId:null,selectedLevels:[],fileId:'',
   select:selectedId=>set({selectedId}),setFile:fileId=>set({fileId}),
   toggleLevel:level=>set(state=>({selectedLevels:state.selectedLevels.includes(level)?state.selectedLevels.filter(item=>item!==level):[...state.selectedLevels,level]})),
-  reset:()=>set({sources:{},files:[],events:[],selectedId:null,selectedLevels:[],fileId:''}),
+  reset:()=>set(state=>({sources:{},files:[],events:[],selectedId:null,selectedLevels:[],fileId:'',search:{...defaultSearch},filters:{...defaultFilters},sessionVersion:state.sessionVersion+1})),
   remove:id=>set(state=>({sources:Object.fromEntries(Object.entries(state.sources).filter(([key])=>key!==id)),files:state.files.filter(file=>file.id!==id),events:state.events.filter(event=>event.sourceFileId!==id),selectedId:state.events.find(event=>event.id===state.selectedId)?.sourceFileId===id?null:state.selectedId,fileId:state.fileId===id?'':state.fileId})),
   reparse(id,options){
     const state=get();const file=state.files.find(file=>file.id===id);

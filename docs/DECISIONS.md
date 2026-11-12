@@ -60,3 +60,25 @@ Microsoft IIS W3C 규약에 근거해 date+time은 UTC로 정규화한다. 일�
 - [Microsoft IIS W3C 로그와 UTC 정책](https://learn.microsoft.com/en-us/iis/configuration/system.applicationhost/sites/site/logfile/)
 - [Serilog Compact 형식 명세](https://github.com/serilog/serilog-formatting-compact)
 - [Apache Log4j PatternLayout](https://logging.apache.org/log4j/2.x/manual/pattern-layout.html)
+
+## ADR-012 — Phase 3 필터와 검색 상태 (2026-11-12, 채택)
+
+Zustand에 적용된 검색/필터만 보관하고 UI의 편집 초안과 분리한다. 검색 적용/Enter로 일괄 반영하며 검색 초기화는 검색·기간·Logger/Thread·정렬을 해제하고 기존 레벨/파일 필터는 유지한다. 세션 초기화는 모든 조건도 비운다. 원본 sources와 정규화 events를 변경하지 않고 파생 결과만 만든다. 키워드는 원문·메시지·Logger·Thread·서비스·Request ID·Trace ID·파일명에서 검색한다. 일반 검색은 공백 구분, 큰따옴표 구문, AND/OR, Unicode 대소문자 옵션을 지원한다. 일반 검색의 사용자 문자는 정규식 메타문자로 해석하지 않도록 escape한다.
+
+기간 입력은 사용자의 호스트 시간대에 의존하는 datetime-local 대신 명시적 Z/오프셋 문자열을 받는다. 기존 시간 검증기를 공유하며 경계는 inclusive다. rawTimestamp만 있는 이벤트는 epoch를 만들지 않고 includeUntimed 옵션을 따른다. 시간순 정렬은 null을 맨 뒤에 두고 같거나 누락된 시각끼리는 원본 순서를 유지한다. 원본 순서 모드는 업로드 파일/이벤트의 기존 순서를 그대로 유지한다. Logger/Thread는 대소문자 비구분 부분 일치다.
+
+## ADR-013 — 사용자 정규식의 검색 Worker 격리 (2026-11-12, 채택)
+
+정규식 안전성을 패턴 사전 검사만으로 보장하지 않는다. 임의 사용자 정규식은 검색 전용 module Worker 안에서만 컴파일/실행하며 UI는 Worker.terminate() watchdog으로 취소한다. Worker 시작 제한 5초, ready 수신 후 전달·실행·결과 수신 제한 1초다. 오류·취소·완료·조건 변경/언마운트 시 종료하고 이전 작업의 응답은 수락하지 않는다. pending/error 상태에는 이전 검색 결과를 최신 결과로 보여주지 않는다. Worker 미지원/실행 실패 시 명확한 오류를 표시하고 일반 검색을 사용할 수 있다.
+
+패턴 길이 256 UTF-16 코드 단위, 이벤트 검색 필드 합 128 Ki 문자, 전체 검색 필드 합 16 Mi 문자로 제한한다. 초과는 명시적 실패이며 잘라서 성공처럼 표시하지 않는다. Unicode u, 선택적 i, 내부 g만 사용한다. 정규식 모드는 AND/OR 대신 정규식 문법을 직접 따른다. zero-width 매치는 이벤트 포함에는 유효하지만 강조할 문자가 없으므로 범위를 만들지 않고 다음 Unicode 코드 포인트로 진행한다.
+
+강조 범위도 Worker에서 계산해 메인 스레드에서 정규식을 재실행하지 않는다. 텍스트 노드와 mark 태그로 렌더링하며 원문은 변경하지 않는다. 필드별 최대 100개, 정규식 전체 20,000개 강조 범위만 생성한다. 강조 제한이 일치 ID 목록을 자르지 않는다. Worker가 응답한 현재 결과만 사용하며 삭제/초기화 뒤 이전 이벤트 배열 참조도 해제한다.
+
+이것은 Phase 3 ReDoS 격리이며 Phase 7의 스트리밍 파싱·Worker 전환과 구분한다. 실행 제한은 브라우저 타이머 기반 best effort다. 백그라운드 탭의 타이머 지연이나 저메모리 브라우저까지 실시간 자원 한도를 보장한다고 주장하지 않는다. 검색 필드 복사 비용은 기존 파일 한도 안에서 감수한다.
+
+근거: [MDN Worker.terminate](https://developer.mozilla.org/en-US/docs/Web/API/Worker/terminate), [MDN RegExp.exec 및 zero-width 주의사항](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/exec).
+
+## ADR-014 — 고정 높이 가상 목록 (2026-11-12, 채택)
+
+새 의존성 없이 순수 범위 계산기와 네이티브 스크롤을 사용한다. 62px 행, 434px viewport, 앞뒤 overscan 5로 렌더링 범위를 계산하고 나머지는 접근성 트리에서 제외한 spacer로 표현한다. 메시지는 한 줄로 제한하고 원문 전체는 상세에 둬 높이를 안정적으로 유지한다. aria-rowcount/aria-rowindex를 제공하고 스크롤 영역은 키보드 초점을 받을 수 있다. 조건·정렬·파일 변경 시 범위 컴포넌트를 재생성해 맨 위부터 표시한다. 가변 높이 확장과 실제 브라우저 스크롤/접근성 검증은 별도 과제로 남긴다.
