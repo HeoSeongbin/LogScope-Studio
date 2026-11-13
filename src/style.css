@@ -71,3 +71,7 @@ header{height:auto;min-height:73px;flex-wrap:wrap;padding-top:12px;padding-botto
 /* Phase 9 axe findings: small secondary text and decorative navigation numbers. */
 .workspace[data-theme=dark] :is(.workspace-label>span,.nav-note,.privacy small,.metric small,.detail-empty p,.footnote){color:#99a9bd}
 .workspace-nav.nav-active>span:last-child{opacity:1;color:inherit}
+
+.workspace[data-theme=light]{color:#2e4158}
+.workspace[data-theme=light] .workspace-nav.nav-active{color:#126b47}
+.workspace[data-theme=light] .theme-toggle{background:#f7faf9;color:#294157}

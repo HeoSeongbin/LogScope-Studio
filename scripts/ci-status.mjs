@@ -10,6 +10,20 @@ if(!token){
 const headers={Accept:'application/vnd.github+json','User-Agent':'LogScope-CI-verification',...(token?{Authorization:'Bearer '+token}:{})};
 const mode=process.argv[2]??'branch',id=process.argv[3];
 if(id&&!/^\d+$/.test(id))throw new Error('A numeric run/job ID is required');
+if(mode==='report'){
+  mkdirSync('test-results',{recursive:true});
+  const jobs=await (await fetch(`${repo}/actions/runs/${id}/jobs`,{headers})).json();
+  for(const job of jobs.jobs??[]){
+    console.log(JSON.stringify({job:job.id,name:job.name,conclusion:job.conclusion}));
+    if(job.conclusion==='failure'){const logs=await fetch(`${repo}/actions/jobs/${job.id}/logs`,{headers});if(logs.ok)writeFileSync(`test-results/ci-job-${job.id}.log`,await logs.text());}
+  }
+  const artifacts=await (await fetch(`${repo}/actions/runs/${id}/artifacts`,{headers})).json();
+  for(const artifact of artifacts.artifacts??[]){
+    if(artifact.name!=='validation-results')continue;const archive=await fetch(`${repo}/actions/artifacts/${artifact.id}/zip`,{headers});
+    if(archive.ok){const path=`test-results/ci-${artifact.id}.zip`;writeFileSync(path,new Uint8Array(await archive.arrayBuffer()));console.log(path);}
+  }
+  process.exit(0);
+}
 const endpoint=mode==='artifact'?`/actions/artifacts/${id}/zip`:mode==='jobs'?`/actions/runs/${id}/jobs`:mode==='logs'?`/actions/jobs/${id}/logs`:mode==='main'?'/actions/runs?branch=main&per_page=1':'/actions/runs?branch=codex%2Fphase9-validation&per_page=1';
 const response=await fetch(repo+endpoint,{headers});
 if(!response.ok){console.log(JSON.stringify({status:response.status}));process.exitCode=1;}

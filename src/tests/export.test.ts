@@ -42,6 +42,12 @@ describe('local analysis exports',()=>{
     const event=parse('한글😀')[0];expect(()=>eventDataset(Array.from({length:MAX_EXPORT_EVENTS+1},()=>event),context)).toThrow('EXPORT_LIMIT');
     const dataset=eventDataset([event],context);const first=await serializeExport(dataset,'json');await expect(serializeExport(dataset,'json',{maxBytes:first.bytes-1})).rejects.toThrow('EXPORT_LIMIT');expect((await serializeExport(dataset,'json',{maxBytes:first.bytes})).bytes).toBe(first.bytes);
   });
+  it('enforces the actual default 32 MiB output boundary',async()=>{
+    const event={...parse('INFO synthetic')[0],message:'',rawText:'x'.repeat(1024*1024)};
+    const rows=Array.from({length:31},(_,i)=>({...event,id:`synthetic-${i}`}));
+    const result=await serializeExport(eventDataset(rows,{}),'json');expect(result.bytes).toBeGreaterThan(31*1024*1024);expect(result.bytes).toBeLessThanOrEqual(32*1024*1024);
+    await expect(serializeExport(eventDataset([...rows,{...event,id:'synthetic-31'}],{}),'json')).rejects.toThrow('EXPORT_LIMIT');
+  });
   it('cancels before work and between batches and reports actual serialized rows',async()=>{
     const events=Array.from({length:250},(_,i)=>({...parse('INFO event')[0],id:String(i)}));const dataset=eventDataset(events,context);const controller=new AbortController();controller.abort();await expect(serializeExport(dataset,'json',{signal:controller.signal})).rejects.toMatchObject({name:'AbortError'});
     const mid=new AbortController();const progress:number[]=[];await expect(serializeExport(dataset,'csv',{signal:mid.signal,onProgress:done=>{progress.push(done);if(done===100)mid.abort();}})).rejects.toMatchObject({name:'AbortError'});expect(progress).toEqual([0,100]);

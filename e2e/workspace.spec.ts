@@ -80,8 +80,24 @@ test('invalid filters and damaged encoding report reasons without replacing prio
   await expect(page.getByRole('region',{name:'분석 결과 내보내기',exact:true}).getByRole('button',{name:'선택 범위 다운로드',exact:true})).toBeDisabled();await page.getByRole('button',{name:'검색 초기화',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'5개 결과 / 5개 이벤트'})).toBeVisible();
 });
 
+test('cancel before Worker readiness and reset discard late work while allowing retry',async({page})=>{
+  let unblock!:()=>void;const blocked=new Promise<void>(resolve=>{unblock=resolve;});
+  const pattern=/\/assets\/parse\.worker-[^/]+\.js$/;
+  await page.route(pattern,async route=>{await blocked;await route.continue().catch(()=>{/* cancellation can abort the worker request */});});
+  try{
+    const requested=page.waitForRequest(request=>pattern.test(request.url()));
+    await page.getByLabel('로그 파일 업로드',{exact:true}).setInputFiles({name:'cancel.log',mimeType:'text/plain',buffer:Buffer.from('INFO cancelled')});await requested;
+    await page.getByRole('button',{name:'cancel.log 분석 취소',exact:true}).click();await expect(page.getByRole('button',{name:/^cancel.log .*취소됨/})).toBeVisible();
+    await page.getByRole('button',{name:'세션 초기화',exact:true}).click();unblock();await page.unroute(pattern);
+    await upload(page,['spring-normal.log'],5);await expect(page.getByRole('button',{name:/^cancel.log /})).toHaveCount(0);
+  }finally{unblock();}
+});
+
 test('themes, responsive overflow and keyboard navigation stay accessible under automated rules',async({page})=>{
   await upload(page,['spring-exception.log'],3);
+  await page.getByRole('button',{name:/^spring-exception.log .*3개 이벤트/}).click();
+  await page.getByRole('button',{name:'Database request failed',exact:true}).first().click();
+  await page.getByText('분석 결과 내보내기',{exact:true}).click();
   for(const theme of ['dark','light']){
     if(theme==='light')await page.getByRole('button',{name:'밝은 테마',exact:true}).click();
     const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(results.violations,JSON.stringify(results.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),null,2)).toEqual([]);

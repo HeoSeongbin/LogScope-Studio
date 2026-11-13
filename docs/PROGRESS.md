@@ -2,7 +2,7 @@
 
 현재 Phase: **Phase 9 테스트 및 배포 진행 중** (2026-11-13).
 
-Phase 9 진행: Production 하위 경로 E2E 7종×4 프로젝트와 axe/CI 게이트를 추가했다. 로컬 Chromium·Firefox는 테스트 본문 실행 전 spawn UNKNOWN으로 실패했고 완료 처리하지 않는다. GitHub Pages는 비활성 상태이며 최근 Actions는 build 성공/deploy 실패였다. 검증 브랜치의 Linux CI에서 실행 결과를 확인한 뒤 main 배포를 진행한다. 첫 Linux E2E는 20/28 통과였다. Dark 보조 텍스트 대비·브라우저별 디코딩 진단을 수정했고 모바일 실패는 숨긴 장식 번호를 포함한 테스트 선택자를 안정화했다. 재검증 전에는 완료 처리하지 않는다. 아래는 Phase 8까지의 확정 기록이다.
+Phase 9 진행: Production 하위 경로 E2E 7종×4 프로젝트와 axe/CI 게이트를 추가했다. 로컬 Chromium·Firefox는 테스트 본문 실행 전 spawn UNKNOWN으로 실패했고 완료 처리하지 않는다. GitHub Pages는 비활성 상태이며 최근 Actions는 build 성공/deploy 실패였다. 검증 브랜치의 Linux CI에서 실행 결과를 확인한 뒤 main 배포를 진행한다. 첫 Linux E2E는 20/28 통과였다. Dark 보조 텍스트 대비·브라우저별 디코딩 진단을 수정했고 모바일 실패는 숨긴 장식 번호를 포함한 테스트 선택자를 안정화했다. 두 번째 Linux E2E는 24/28 통과로 기능 실패가 해소됐고 Light 테마의 활성 메뉴/hover 대비만 남아 수정했다. 추가로 Worker 준비 전 취소/초기화 E2E와 실제 32 MiB 출력 경계 단위 검증을 보강했다. 재검증 전에는 완료 처리하지 않는다. 아래는 Phase 8까지의 확정 기록이다.
 다음 Phase: **Phase 9 테스트 및 배포**. 전체 E2E·브라우저 호환성·접근성 적합성·실제 Pages 배포는 미완료다.
 
 ## 시작 상태와 범위
