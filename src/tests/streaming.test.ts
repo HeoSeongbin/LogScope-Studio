@@ -30,7 +30,8 @@ describe('chunk-invariant parsing',()=>{
   });
   it('rejects damaged decoding, huge lines/records and event/storage limits explicitly',async()=>{
     const request={fileId:'id',fileName:'file',options:{}};
-    await expect(parseBlob({...request,source:new Blob([new Uint8Array([0xe3,0x81])]),chunkBytes:1})).rejects.toThrow();
+    await expect(parseBlob({...request,source:new Blob([new Uint8Array([0xe3,0x81])]),chunkBytes:1})).rejects.toThrow('TEXT_DECODE: utf-8');
+    await expect(parseBlob({...request,source:new Blob([new Uint8Array([0xff,0xfe,0])]),chunkBytes:1})).rejects.toThrow('TEXT_DECODE: utf-16le');
     await expect(parseBlob({...request,source:new Blob(['x'.repeat(MAX_LINE_CHARS+1)])})).rejects.toThrow('PARSE_LIMIT');
     await expect(parseBlob({...request,source:new Blob(['java.lang.Exception: x\n'+(' at Demo.run(Demo.java:1)\n').repeat(Math.ceil(MAX_RECORD_CHARS/20))])})).rejects.toThrow('PARSE_LIMIT');
     await expect(parseBlob({...request,source:'INFO a\nINFO b',limits:{events:1}})).rejects.toThrow('이벤트 수');

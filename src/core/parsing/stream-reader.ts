@@ -8,12 +8,16 @@ export async function detectEncoding(blob:Blob){
 export async function* decodedChunks(blob:Blob,encoding:string,chunkBytes=CHUNK_BYTES,onRead?:(bytes:number)=>void){
   if(!Number.isSafeInteger(chunkBytes)||chunkBytes<1)throw new Error('청크 크기는 양의 정수여야 합니다.');
   const decoder=new TextDecoder(encoding,{fatal:true});
+  function decode(bytes?:ArrayBuffer,stream=false){
+    try{return decoder.decode(bytes,{stream});}
+    catch(error){throw new Error(`TEXT_DECODE: ${encoding} 디코딩 실패: ${error instanceof Error?error.message:'잘못된 바이트 입력'}`,{cause:error});}
+  }
   for(let offset=0;offset<blob.size;offset+=chunkBytes){
-    const end=Math.min(blob.size,offset+chunkBytes);const text=decoder.decode(await blob.slice(offset,end).arrayBuffer(),{stream:true});
+    const end=Math.min(blob.size,offset+chunkBytes);const text=decode(await blob.slice(offset,end).arrayBuffer(),true);
     if(text.includes('\0'))throw new Error('TEXT_BINARY: NUL이 포함된 텍스트는 지원하지 않습니다.');
     if(text)yield text;onRead?.(end);
   }
-  const tail=decoder.decode();if(tail.includes('\0'))throw new Error('TEXT_BINARY: NUL이 포함된 입력입니다.');if(tail)yield tail;
+  const tail=decode();if(tail.includes('\0'))throw new Error('TEXT_BINARY: NUL이 포함된 입력입니다.');if(tail)yield tail;
 }
 export async function* streamLines(chunks:AsyncIterable<string>,maxLine=MAX_LINE_CHARS):AsyncGenerator<StreamLine>{
   let buffer='',offset=0,number=1;

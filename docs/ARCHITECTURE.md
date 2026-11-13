@@ -119,3 +119,39 @@ ui.ts의 메모리 상태가 data-theme CSS 변수와 Chart.js 팔레트, 상세
 ExportControls → 범위별 ExportDataset builder → serializeExport → downloadArtifact 경로다. 메타데이터/정규화 행/요약을 구분하며 기존 통계·예외·typed trace 함수를 재사용한다. 공통 필터/명시적 전체/선택 이벤트·식별자/버킷 크기를 export context에 남긴다. 원본 File/Blob을 직렬화하거나 서버에 전송하지 않는다.
 
 serializeExport는 JSON/CSV/HTML을 바이트 청크로 모으며 원본 이벤트 50,000개·UTF-8 32 MiB 한도를 적용한다. CSV 방어 접두사는 CSV에만 적용하고 HTML은 동적 값을 escape한다. 진행 행 수와 AbortSignal을 사용하며 revision 변경 시 늦은 결과를 버린다. 파일 다운로드 후 임시 anchor와 object URL을 정리한다. 메인 데이터 준비/레코드 직렬화의 지연은 남아 있다. ADR-026~028에 범위·한계·보안 정책을 기록한다.
+
+## 실제 데이터 처리 경로
+
+```mermaid
+flowchart TD
+  File[사용자가 선택한 File] --> Original[원본 Blob Map / 메모리]
+  Original --> Queue[파싱 작업 직렬 큐]
+  Queue --> Worker[파싱 Worker]
+  Worker --> Scan[IIS 문맥 사전 스캔]
+  Scan --> Decode[64 KiB 스트리밍 디코딩]
+  Decode --> Parse[형식별 파서 / JSON 상태기계]
+  Parse --> Normalize[예외 병합 / 명시적 ID / 시간 근거]
+  Normalize --> Store[정규화 이벤트와 파일 진단]
+  Store --> Filter[필터 / 일반 검색 / 정규식 Worker]
+  Filter --> Views[탐색 / 예외 / 통계 / 요청 관측 흐름]
+  Views --> Export[명시적 범위의 CSV / JSON / HTML]
+  Export --> Local[로컬 다운로드]
+  Original --> Preview[최대 512 KiB 미리보기]
+```
+
+## 검증과 배포 경로 (Phase 9)
+
+```mermaid
+flowchart LR
+  Source[소스 / lockfile] --> Checks[TypeScript / ESLint / 단위·통합 검사]
+  Checks --> Build[Production dist]
+  Build --> Prefix[저장소 하위 경로 정적 서버]
+  Prefix --> E2E[Chromium / Firefox / WebKit / mobile]
+  E2E --> Gate[원문·Worker·다운로드·axe·네트워크 검증]
+  Gate --> Artifact[검증 보고서 / Pages artifact]
+  Artifact --> Main[검증된 main만 배포]
+  Main --> Pages[GitHub Pages]
+  Pages --> Smoke[실제 배포 URL 분석 기능 확인]
+```
+
+검증 브랜치에는 Pages 배포 권한을 부여하지 않는다. build는 contents read만 사용하고 deploy에만 pages/id-token write를 둔다. 로그 입력은 공개 가상 샘플뿐이며 E2E artifact에 실제 사용자 로그를 넣지 않는다. 배포 성공 여부는 workflow 존재가 아니라 실제 run과 배포 URL에서 확인한다.

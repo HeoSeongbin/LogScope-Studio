@@ -19,7 +19,7 @@ async function downloadJSON(page:Page,region='분석 결과 내보내기'){
   const pending=page.waitForEvent('download');await panel.getByRole('button',{name:'선택 범위 다운로드',exact:true}).click();
   const download=await pending;expect(await download.failure()).toBeNull();return JSON.parse(await readFile((await download.path())!,'utf8'));
 }
-test.beforeEach(async({page})=>{await page.goto('./');await expect(page.getByRole('heading',{name:/로그 탐색기Phase/})).toBeVisible();});
+test.beforeEach(async({page})=>{await page.goto('./');await expect(page.getByRole('heading',{name:'로그 탐색기',exact:true})).toBeVisible();});
 
 test('production prefix loads sample and parse/search Workers with exact source provenance',async({page})=>{
   const workers:string[]=[];page.on('worker',worker=>workers.push(worker.url()));
@@ -50,14 +50,14 @@ test('cross-file trace respects explicit timezone, null time and exact selected 
   await page.getByRole('button',{name:/^distributed-db.log .*3개 이벤트/}).click();
   await page.getByLabel('파일 시간대',{exact:true}).fill('UTC');await page.getByRole('button',{name:'파일 설정 적용 및 재분석',exact:true}).click();
   await expect(page.getByRole('button',{name:'파일 설정 적용 및 재분석',exact:true})).toBeEnabled();
-  await page.getByRole('button',{name:'모든 파일 7',exact:true}).click();await page.getByRole('button',{name:'요청 추적 04',exact:true}).click();
+  await page.getByRole('button',{name:'모든 파일 7',exact:true}).click();await page.getByRole('navigation',{name:'분석 화면'}).getByRole('button',{name:/^요청 추적/}).click();
   await expect(page.getByRole('heading',{name:'시간순 관측 이벤트 · 5개',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'시각 미확인 이벤트 (시간축 제외) · 1개',exact:true})).toBeVisible();
   await page.getByText('선택 추적 내보내기',{exact:true}).click();const data=await downloadJSON(page,'선택 추적 내보내기');
   expect(data.metadata.kind).toBe('trace');expect(data.rows).toHaveLength(6);expect(data.rows.filter((row:{timestamp:number|null})=>row.timestamp===null)).toHaveLength(1);expect(data.metadata.summary.observedWindowMs).toBe(4030);
 });
 
 test('dashboard bucket drill-down and statistics export use actual observed counts',async({page})=>{
-  await upload(page,['statistics-demo.jsonl'],12);await page.getByRole('button',{name:'Dashboard 00',exact:true}).click();
+  await upload(page,['statistics-demo.jsonl'],12);await page.getByRole('navigation',{name:'분석 화면'}).getByRole('button',{name:/^Dashboard/}).click();
   await expect(page.getByText('41.7%',{exact:true})).toBeVisible();await page.getByRole('button',{name:'집중 구간 선택 2026-11-06T05:31:00.000Z',exact:true}).click();await expect(page.getByRole('heading',{name:'선택 구간 이벤트 · 5개',exact:true})).toBeVisible();
   await page.getByLabel('시간 버킷',{exact:true}).selectOption('5m');await page.getByText('통계 내보내기',{exact:true}).click();await page.getByLabel('통계 내보내기 대상',{exact:true}).selectOption('timeline');
   const data=await downloadJSON(page,'통계 내보내기');expect(data.metadata.context.bucketSize).toBe('5m');expect(data.metadata.summary).toMatchObject({timed:10,untimed:2,counts:{total:12,errors:5}});

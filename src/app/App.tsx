@@ -63,7 +63,7 @@ export function App(){
     <div className="main-shell">
       <header><div className="breadcrumb">워크스페이스 <ChevronRight size={13}/><strong>{viewTitle}</strong></div><span className="local-status">● 로컬 분석</span><button className="theme-toggle" aria-label="밝은 테마" aria-pressed={ui.theme==='light'} onClick={ui.toggleTheme}>{ui.theme==='dark'?'☀ 밝게':'☾ 어둡게'}</button><button className="primary" onClick={()=>input.current?.click()}><Upload size={15}/> 로그 업로드</button></header>
       <main id="main-content" tabIndex={-1}>
-        <div className="page-heading"><div><div className="eyebrow">LOG EXPLORER</div><h1>{viewTitle}<span>Phase 8</span></h1><p>흩어진 로그를 한곳에서. 문제의 시작을 찾아보세요.</p></div><button className="subtle" onClick={store.reset} disabled={!store.files.length}><Trash2 size={14}/> 세션 초기화</button></div>
+        <div className="page-heading"><div><div className="eyebrow">LOG EXPLORER</div><h1>{viewTitle}</h1><p>흩어진 로그를 한곳에서. 문제의 시작을 찾아보세요.</p></div><button className="subtle" onClick={store.reset} disabled={!store.files.length}><Trash2 size={14}/> 세션 초기화</button></div>
         <div className="metrics">{[['전체 이벤트',store.events.length,'전체 파일에서 수집'],['ERROR',counts.ERROR,'오류 레벨 이벤트'],['WARN',counts.WARN,'경고 레벨 이벤트'],['소스 파일',store.files.filter(file=>file.status==='done').length,'분석 완료 파일']].map(([label,value,caption])=><div className="metric" key={label}><div>{label}<span className={label==='ERROR'?'error-icon':''}>◈</span></div><strong>{Number(value).toLocaleString()}</strong><small>{caption}</small></div>)}</div>
         <div className="upload-format"><label>새 파일 로그 형식 <select aria-label="새 파일 로그 형식" value={uploadParser} onChange={event=>setUploadParser(event.target.value as ParserChoice)}>{parserChoices.map(choice=><option key={choice.id} value={choice.id}>{choice.name}</option>)}</select></label><span>업로드 후 왼쪽 파일을 선택하면 형식을 바꿀 수 있습니다.</span></div>
         <section className={`drop-zone ${drag?'dragging':''}`} onDragOver={event=>{event.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={event=>{event.preventDefault();setDrag(false);void store.upload(Array.from(event.dataTransfer.files),{parser:uploadParser});}}>
@@ -94,7 +94,7 @@ export function App(){
         </div>
         <div className="footnote"><ShieldCheck size={13}/> 로그는 외부로 전송되지 않습니다.<span>Spring · Logback/Log4j2 · .NET · Serilog · JSON · IIS W3C</span></div>
       </main>
-      <footer><span className="status-dot"/> {store.files.some(file=>file.status==='reading')?'파일을 분석하고 있습니다':'분석 준비 완료'}<span>{store.events.length.toLocaleString()} 이벤트</span><span>{store.files.reduce((sum,file)=>sum+file.warnings,0)}개 경고</span><span>{store.files.reduce((sum,file)=>sum+(file.failures??0),0)}개 파싱 실패</span><span>{store.files.reduce((sum,file)=>sum+(file.duration??0),0).toFixed(0)} ms</span><span className="right">LOGSCOPE STUDIO / v0.8.0</span></footer>
+      <footer><span className="status-dot"/> {store.files.some(file=>file.status==='reading')?'파일을 분석하고 있습니다':'분석 준비 완료'}<span>{store.events.length.toLocaleString()} 이벤트</span><span>{store.files.reduce((sum,file)=>sum+file.warnings,0)}개 경고</span><span>{store.files.reduce((sum,file)=>sum+(file.failures??0),0)}개 파싱 실패</span><span>{store.files.reduce((sum,file)=>sum+(file.duration??0),0).toFixed(0)} ms</span><span className="right">LOGSCOPE STUDIO / v0.9.0</span></footer>
     </div>
   </div>;
 }
