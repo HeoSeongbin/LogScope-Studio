@@ -3,6 +3,8 @@ import { aggregateStatistics, bucketSizes, buildTimeline, eventsInBucket, findCo
 import { levels, type LogEvent } from '../types/log';
 import type { MatchRange, SearchOptions } from '../types/search';
 import { LevelChart, ServiceChart, TimelineChart } from './StatisticsCharts';
+import { ExportControls } from './ExportControls';
+import { statisticsDataset, timelineDataset } from '../core/export';
 import { VirtualLogTable } from './VirtualLogTable';
 
 const signalNames:Record<ErrorSignal,string>={application:'ERROR + FATAL',http5xx:'HTTP 5xx',exception:'예외 이벤트'};
@@ -12,7 +14,7 @@ function DimensionTable({title,items,onFile}:{title:string;items:DimensionCounts
   const [page,setPage]=useState(0);const current=Math.min(page,Math.max(0,Math.ceil(items.length/20)-1));
   return <section className="statistics-card"><h3>{title} <span>{items.length}개</span></h3><div className="statistics-table-scroll"><table aria-label={title}><thead><tr><th>이름</th><th>전체</th><th>ERROR+FATAL</th><th>예외</th><th>HTTP 5xx</th></tr></thead><tbody>{items.slice(current*20,(current+1)*20).map(item=><tr key={JSON.stringify([item.key])}><td>{onFile&&item.key!==null?<button className="statistics-link" onClick={()=>onFile(item.key!)} aria-label={`파일 탐색 ${fieldLabel(item.name)}`}>{fieldLabel(item.name)}</button>:fieldLabel(item.name)}</td><td>{item.total}</td><td>{item.errors}</td><td>{item.exceptions}</td><td>{item.http5xx}</td></tr>)}</tbody></table></div>{!items.length&&<p className="statistics-note">현재 결과에 이벤트가 없습니다.</p>}<div className="pagination"><span>{current+1} / {Math.max(1,Math.ceil(items.length/20))}</span><button disabled={!current} onClick={()=>setPage(current-1)}>이전</button><button disabled={(current+1)*20>=items.length} onClick={()=>setPage(current+1)}>다음</button></div></section>;
 }
-export function StatisticsDashboard({events,select,focusFile,search,messageRanges,timelineOnly=false,selectedId=null}:{events:LogEvent[];select:(id:string)=>void;focusFile:(id:string)=>void;search:SearchOptions;messageRanges?:Record<string,MatchRange[]>;timelineOnly?:boolean;selectedId?:string|null}){
+export function StatisticsDashboard({events,select,focusFile,search,messageRanges,timelineOnly=false,selectedId=null,exportContext,exportPending=false}:{events:LogEvent[];select:(id:string)=>void;focusFile:(id:string)=>void;search:SearchOptions;messageRanges?:Record<string,MatchRange[]>;timelineOnly?:boolean;selectedId?:string|null;exportContext?:object;exportPending?:boolean}){
   const statistics=useMemo(()=>aggregateStatistics(events),[events]);
   const [size,setSize]=useState<BucketSize>('1m');const [signal,setSignal]=useState<ErrorSignal>('application');
   const [minCount,setMinCount]=useState('3');const [minPercent,setMinPercent]=useState('30');
@@ -25,9 +27,14 @@ export function StatisticsDashboard({events,select,focusFile,search,messageRange
   const selected=timeline.buckets.find(bucket=>bucket.start===selectedStart);
   const selectedEvents=useMemo(()=>selected?eventsInBucket(statistics.events,selected):[],[statistics.events,selected]);
   const currentPage=Math.min(bucketPage,Math.max(0,Math.ceil(timeline.buckets.length/50)-1));
+  const exportRevision=useMemo(()=>({events,size,exportContext,exportPending}),[events,size,exportContext,exportPending]);
   const summary=statistics.summary;
   return <div className="statistics-dashboard" aria-label={timelineOnly?'Timeline Analyzer':'Dashboard'}>
     <div className="statistics-heading"><h2>{timelineOnly?'타임라인 분석':'분석 대시보드'}</h2><span>현재 검색·기간·레벨·파일 조건 기준</span></div>
+    <ExportControls label="통계 내보내기" revision={exportRevision} targets={[
+      {id:'statistics',label:'현재 필터의 요약·파일·서비스·Logger 통계',disabled:exportPending,build:()=>statisticsDataset(events,exportContext??{scope:'provided-events'})},
+      {id:'timeline',label:'현재 선택 버킷의 전체 UTC 시간대별 통계',disabled:exportPending||!!timeline.error,build:()=>timelineDataset(events,size,exportContext??{scope:'provided-events'})},
+    ]}/>
     <div className="statistics-metrics">{[
       ['결과 이벤트',summary.total.toLocaleString()],['ERROR + FATAL',summary.errors.toLocaleString()],['WARN',String(summary.levels.WARN)],['INFO',String(summary.levels.INFO)],['오류 레벨 비율',statistics.errorRate===null?'—':`${(statistics.errorRate*100).toFixed(1)}%`],['예외 이벤트',String(summary.exceptions)],['HTTP 4xx / 5xx',`${summary.http4xx} / ${summary.http5xx}`],['시각 있음 / 없음',`${statistics.timed} / ${statistics.untimed}`],
     ].map(([label,value])=><div key={label} className="statistic-metric"><span>{label}</span><strong>{value}</strong></div>)}</div>

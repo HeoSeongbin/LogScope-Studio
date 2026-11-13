@@ -72,3 +72,13 @@ Node File 업로드/설정/재분석/색상/제거/초기화 및 원문/기존 �
 npm test는 실제 프로덕션 파싱 Worker를 먼저 빌드한다. parse-worker.test.ts/workspace.test.ts는 Node Worker의 실제 결과·진행률, 큐/취소/늦은 응답/제거/초기화, 준비·유휴 timeout·생성 실패, 재분석 원자성, 큰 원본 캐시 분리/미리보기/재시도를 검증한다. jsdom 설정 테스트도 실제 Worker 완료를 기다려 기존 파서/시간대/매핑 동작을 확인한다. 사용자 정규식의 실제 ReDoS 종료 테스트도 계속 통과한다.
 
 1/10/50 MiB 합성 로그 단일 실행의 실제 성능은 PERFORMANCE.md 및 benchmarks/phase7.json에 있다. 브라우저 E2E·실제 FPS·모바일·대표 실제 로그 분포·Pages 배포는 미검증이다. 위 Phase 1~6 절의 대용량/청크 미검증 표시는 해당 시점 이력이다.
+
+## Phase 8 검증 (2026-11-13)
+
+타입 검사/ESLint/Production Build 통과. Vitest 18개 파일·192개 테스트 통과 (이전 162개 포함). export.test.ts는 실제 파서 결과의 JSON round trip·진단/원문/위치/설정, CSV Unicode·CRLF·quote/BOM·수식 위험 접두사, HTML escape/CSP, 예외/추적/UTC 통계, null/빈 결과, 바이트/이벤트 한도·취소를 검증한다. download.test.ts는 임시 anchor/URL 정리를 확인한다.
+
+export-ui.test.tsx/statistics-ui.test.tsx는 실제 필터/전체/선택 예외/선택 추적/통계 버킷 연결, 무효 필터 차단, 취소·scope 변경/언마운트 후 다운로드 차단, 오류 안내, 테마/너비와 키보드 가상 목록 끝 행을 확인한다. 다운로드 UI 테스트는 브라우저 저장 동작을 mock하지만 Blob 내용은 실제 직렬화 결과를 읽는다. Canvas UI 단위 테스트의 기존 mock과 실제 브라우저 확인을 구분한다.
+
+실제 IAB/로컬 개발 서버에서 Spring 반복 예외 샘플을 Worker로 분석해 3개 이벤트를 확인했다. JSON/CSV/HTML 파일을 실제 다운로드하고 JSON rawText를 원본 줄 범위와, CSV rawText를 JSON과 비교했다. HTML은 11,472바이트이며 CSP와 스크립트 부재 확인. 두 테마의 실제 Canvas, 패널 키보드 560px/초기화 320px, 390×844 화면의 페이지 가로 넘침 부재와 상세 단일 열을 확인했다. 스크린샷: docs/screenshots/phase8-*.jpg. 콘솔 error/warn 관측 없음.
+
+미검증: 전체 E2E/브라우저 호환성/모바일 실기기/스크린리더·대비 적합성/HTML 리포트 인쇄·열람 호환성/32 MiB 실제 브라우저 다운로드·저메모리/Pages 배포. 이 항목은 Phase 9에서 보강한다. 스모크 결과만으로 전체 완료를 주장하지 않는다.

@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { collectTraces, buildTrace } from '../core/correlation/trace';
 import { identifierNames } from '../core/correlation/identifiers';
 import { hasTime } from '../core/statistics';
+import { ExportControls } from './ExportControls';
+import { traceDataset } from '../core/export';
 import type { IdentifierKind, LogEvent, SourceFile } from '../types/log';
 
 function serviceLabel(event:LogEvent){return event.service===undefined?'서비스 미기록':event.service===''?'빈 서비스명':event.service;}
@@ -17,13 +19,14 @@ function TraceEvents({events,files,select,title}:{events:LogEvent[];files:Source
     </button>;
   })}{!events.length&&<p className="statistics-note">해당 구간의 이벤트가 없습니다.</p>}<div className="pagination"><span>{current+1} / {Math.max(1,Math.ceil(events.length/50))}</span><button disabled={!current} onClick={()=>setPage(current-1)}>추적 이전</button><button disabled={(current+1)*50>=events.length} onClick={()=>setPage(current+1)}>추적 다음</button></div></section>;
 }
-export function TraceExplorer({events,allEvents,files,select,filterPending=false,filterError}:{events:LogEvent[];allEvents:LogEvent[];files:SourceFile[];select:(id:string)=>void;filterPending?:boolean;filterError?:string}){
+export function TraceExplorer({events,allEvents,files,select,filterPending=false,filterError,exportContext}:{events:LogEvent[];allEvents:LogEvent[];files:SourceFile[];select:(id:string)=>void;filterPending?:boolean;filterError?:string;exportContext?:object}){
   const [kind,setKind]=useState<IdentifierKind>('requestId');const [draft,setDraft]=useState('');const [query,setQuery]=useState('');const [entire,setEntire]=useState(false);const [key,setKey]=useState<string|null>(null);const [page,setPage]=useState(0);
   const ready=entire||(!filterPending&&!filterError);
   const catalog=useMemo(()=>collectTraces(entire?allEvents:events,kind),[allEvents,events,entire,kind]);
   const groups=useMemo(()=>query===''?catalog:catalog.filter(group=>group.value===query),[catalog,query]);
   const selected=key===null?groups[0]:groups.find(group=>group.key===key);
   const trace=useMemo(()=>selected?buildTrace(selected):undefined,[selected]);
+  const exportRevision=useMemo(()=>({selected,entire,exportContext,files,ready}),[selected,entire,exportContext,files,ready]);
   const current=Math.min(page,Math.max(0,Math.ceil(groups.length/50)-1));
   return <section className="log-panel trace-explorer" aria-label="Request Trace Explorer">
     <div className="panel-heading"><h2>요청 추적 <span>{ready?`${groups.length}개 식별자 그룹`:'검색 대기'}</span></h2></div>
@@ -35,6 +38,7 @@ export function TraceExplorer({events,allEvents,files,select,filterPending=false
     {ready&&groups.length>0&&!selected&&<p className="warning">선택했던 그룹이 현재 범위에 없습니다. 목록에서 다시 선택하세요.</p>}
     {ready&&trace&&<div className="trace-detail"><h3>{identifierNames[kind]}: {trace.group.value}</h3><p className="statistics-note">연결 범위: {trace.group.scope??'기본 (설정 없음)'}{kind==='spanId'?` · Trace 문맥: ${trace.group.traceContext??'없음'}`:null} · {trace.fileCount}개 파일 · {trace.services.length}개 서비스 그룹 · {trace.group.events.length}개 이벤트 · ERROR/FATAL {trace.errors}개</p>
       <div className="trace-cautions"><p>시간순 관측 목록이며 인과관계나 완전한 Span 트리가 아닙니다. 서버 간 시계 오차·로그 누락·식별자 재사용 가능성이 있습니다.</p><p>최초~최종 관측 간격: {trace.observedWindowMs===null?'계산 불가 (정규화 시각 2개 미만)':`${trace.observedWindowMs} ms`} — 요청 처리시간으로 단정하지 않습니다.</p><p>시간 기준: {trace.timeBases.join(' · ')}</p></div>
+      <ExportControls label="선택 추적 내보내기" revision={exportRevision} targets={[{id:'trace',label:'현재 선택한 식별자의 관측 이벤트',disabled:!ready||files.some(file=>file.status==='reading'),build:()=>traceDataset(trace.group,{...exportContext,scope:entire?'session-trace':'filtered-trace',filtersApplied:!entire,...(entire?{search:undefined,filters:undefined,levels:undefined,fileId:undefined}:{})})}]}/>
       <div className="trace-services">{trace.services.map(service=><span key={JSON.stringify(service.service)}>{service.service??'서비스 미기록'} · {service.events.length}개</span>)}</div>
       <TraceEvents key={`${trace.group.key}:timed`} title="시간순 관측 이벤트" events={trace.timed} files={files} select={select}/>
       <TraceEvents key={`${trace.group.key}:untimed`} title="시각 미확인 이벤트 (시간축 제외)" events={trace.untimed} files={files} select={select}/>

@@ -1,4 +1,4 @@
-> Phase 1~6 설명은 당시 설계 이력입니다. 현재 파싱/원본 수명과 한도는 마지막 Phase 7 절을 기준으로 합니다.
+> Phase 1~6 설명은 당시 설계 이력입니다. 현재 파싱/원본 수명과 한도는 Phase 7 절, UI/내보내기는 Phase 8 절을 기준으로 합니다.
 
 # 파싱 및 검색 아키텍처
 
@@ -111,3 +111,11 @@ file-context.ts는 로그/형식/사용자 설정의 근거와 Temporal 시간 �
 UI → workspace.upload/reparse → 단일 활성 파싱 큐 → parse.worker → parseBlob으로 전달한다. parseBlob은 stream-reader 사전 스캔 후 StreamTextParser 또는 JsonDocumentStream을 사용한다. finalizeEvent는 기존 식별자/파일 문맥을 적용한다. 공통 기준 파서는 테스트 비교용이며 제품 UI가 동기 파싱을 호출하지 않는다.
 
 원본 Blob은 별도 Map, 작은 디코딩 캐시는 sources, 정규화 이벤트는 events에 둔다. Worker 결과 성공 시 이벤트/설정/진단을 함께 바꾸고 실패나 취소에서는 기존 완료 결과를 유지한다. reset/remove는 작업 토큰과 원본 참조를 정리한다. 미리보기는 최대 512 KiB다. 진행률은 단계별 바이트 기준이다. 자원 한도와 Node 실측은 PERFORMANCE.md에 기록한다. 필터/통계/추적은 메인 스레드의 파생 메모이제이션을 유지한다.
+
+## Phase 8 UI/로컬 내보내기
+
+ui.ts의 메모리 상태가 data-theme CSS 변수와 Chart.js 팔레트, 상세 너비를 제어한다. workspace의 원본/분석 데이터는 바꾸지 않는다. 모바일은 단일 열과 스크롤 가능한 메뉴를 사용한다. 가상 목록의 키보드 이동은 실제 viewport 높이를 반영한다.
+
+ExportControls → 범위별 ExportDataset builder → serializeExport → downloadArtifact 경로다. 메타데이터/정규화 행/요약을 구분하며 기존 통계·예외·typed trace 함수를 재사용한다. 공통 필터/명시적 전체/선택 이벤트·식별자/버킷 크기를 export context에 남긴다. 원본 File/Blob을 직렬화하거나 서버에 전송하지 않는다.
+
+serializeExport는 JSON/CSV/HTML을 바이트 청크로 모으며 원본 이벤트 50,000개·UTF-8 32 MiB 한도를 적용한다. CSV 방어 접두사는 CSV에만 적용하고 HTML은 동적 값을 escape한다. 진행 행 수와 AbortSignal을 사용하며 revision 변경 시 늦은 결과를 버린다. 파일 다운로드 후 임시 anchor와 object URL을 정리한다. 메인 데이터 준비/레코드 직렬화의 지연은 남아 있다. ADR-026~028에 범위·한계·보안 정책을 기록한다.

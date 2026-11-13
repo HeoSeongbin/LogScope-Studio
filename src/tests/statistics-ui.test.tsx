@@ -1,17 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { App } from '../app/App';
 import { parseLog } from '../core/parsers';
+import { downloadArtifact } from '../core/download';
 import { useWorkspace } from '../stores/workspace';
 
 // Canvas painting requires a real browser. Keep UI tests about actual data wiring,
 // controls and drill-down; chart dataset values are tested without this mock.
+vi.mock('../core/download',()=>({downloadArtifact:vi.fn()}));
 vi.mock('react-chartjs-2',()=>({
   Line:({options,...props}:{options:{onClick:(event:null,elements:Array<{index:number}>)=>void};'aria-label':string})=><button aria-label={props['aria-label']} onClick={()=>options.onClick(null,[{index:1}])}>테스트 차트</button>,
   Bar:(props:{'aria-label':string})=><div role="img" aria-label={props['aria-label']}/>,
 }));
-afterEach(()=>{cleanup();useWorkspace.getState().reset();});
+afterEach(()=>{cleanup();useWorkspace.getState().reset();vi.clearAllMocks();});
 const text=readFileSync('public/samples/statistics-demo.jsonl','utf8');
 const events=parseLog({text,fileId:'demo',fileName:'statistics-demo.jsonl'}).events;
 describe('Phase 5 dashboard and timeline',()=>{
@@ -34,4 +36,9 @@ describe('Phase 5 dashboard and timeline',()=>{
   it('handles empty sessions without displaying invented chart points or percentages',()=>{
     render(<App/>);fireEvent.click(screen.getByRole('button',{name:/Dashboard/}));expect(screen.queryByRole('button',{name:'UTC 시간대별 전체·오류·경고·HTTP 5xx·예외 이벤트 차트'})).not.toBeInTheDocument();expect(screen.getByText('정규화 시각이 없어 집중 구간을 계산할 수 없습니다.')).toBeInTheDocument();
   });
+});
+
+it('exports the actual selected UTC bucket size',async()=>{
+  useWorkspace.setState({events});render(<App/>);fireEvent.click(screen.getByRole('button',{name:/Dashboard/,pressed:false}));fireEvent.change(screen.getByRole('combobox',{name:'시간 버킷'}),{target:{value:'5m'}});fireEvent.click(screen.getByText('통계 내보내기',{selector:'summary'}));const controls=within(screen.getByRole('region',{name:'통계 내보내기'}));fireEvent.change(controls.getByRole('combobox',{name:'통계 내보내기 대상'}),{target:{value:'timeline'}});fireEvent.click(controls.getByRole('button',{name:'선택 범위 다운로드'}));await waitFor(()=>expect(downloadArtifact).toHaveBeenCalledOnce());
+  const data=JSON.parse(await vi.mocked(downloadArtifact).mock.calls[0][0].blob.text());expect(data.metadata.context.bucketSize).toBe('5m');expect(data.metadata.summary).toMatchObject({timed:10,untimed:2,counts:{total:12,errors:5}});expect(data.rows.reduce((sum:number,row:{total:number})=>sum+row.total,0)).toBe(10);
 });
