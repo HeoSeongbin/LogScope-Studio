@@ -19,7 +19,7 @@ async function downloadJSON(page:Page,region='분석 결과 내보내기'){
   const pending=page.waitForEvent('download');await panel.getByRole('button',{name:'선택 범위 다운로드',exact:true}).click();
   const download=await pending;expect(await download.failure()).toBeNull();return JSON.parse(await readFile((await download.path())!,'utf8'));
 }
-test.beforeEach(async({page})=>{await page.goto('./');await expect(page.getByRole('heading',{name:'로그 탐색기',exact:true})).toBeVisible();});
+test.beforeEach(async({page})=>{const {version}=JSON.parse(await readFile('package.json','utf8')) as {version:string};await page.goto('./');await expect(page.getByRole('heading',{name:'로그 탐색기',exact:true})).toBeVisible();await expect(page.getByRole('contentinfo')).toContainText(`LOGSCOPE STUDIO / v${version}`);});
 
 test('production prefix loads sample and parse/search Workers with exact source provenance',async({page})=>{
   const workers:string[]=[];page.on('worker',worker=>workers.push(worker.url()));
@@ -98,10 +98,12 @@ test('themes, responsive overflow and keyboard navigation stay accessible under 
   await page.getByRole('button',{name:/^spring-exception.log .*3개 이벤트/}).click();
   await page.getByRole('button',{name:'Database request failed',exact:true}).first().click();
   await page.getByText('분석 결과 내보내기',{exact:true}).click();
+  const failures:object[]=[];
   for(const theme of ['dark','light']){
     if(theme==='light')await page.getByRole('button',{name:'밝은 테마',exact:true}).click();
-    const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(results.violations,JSON.stringify(results.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)})),null,2)).toEqual([]);
+    const results=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();if(results.violations.length)failures.push({theme,rules:results.violations.map(rule=>({id:rule.id,nodes:rule.nodes.map(node=>({target:node.target,reason:node.failureSummary}))}))});
   }
+  expect(failures,JSON.stringify(failures,null,2)).toEqual([]);
   const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width);
   const slider=page.getByRole('slider',{name:'상세 패널 너비',exact:true});if(await slider.isVisible()){await slider.press('End');await expect(slider).toHaveValue('560');}
   await page.getByRole('button',{name:'Database request failed',exact:true}).first().press('Enter');await expect(page.getByLabel('선택 이벤트 원본과 진단')).toContainText('줄 1–9');

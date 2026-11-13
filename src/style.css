@@ -69,7 +69,7 @@ header{height:auto;min-height:73px;flex-wrap:wrap;padding-top:12px;padding-botto
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
 /* Phase 9 axe findings: small secondary text and decorative navigation numbers. */
-.workspace[data-theme=dark] :is(.workspace-label>span,.nav-note,.privacy small,.metric small,.detail-empty p,.footnote){color:#99a9bd}
+.workspace[data-theme=dark] :is(.workspace-label>span,.nav-note,.privacy small,.metric small,.detail-empty p,.footnote,.source small){color:#99a9bd}
 .workspace-nav.nav-active>span:last-child{opacity:1;color:inherit}
 
 .workspace[data-theme=light]{color:#2e4158}
