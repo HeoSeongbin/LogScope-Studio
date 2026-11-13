@@ -186,3 +186,11 @@ AbortController와 범위 revision으로 취소·범위/버킷/선택/파일 변
 기존 Dark 팔레트를 CSS 변수로 옮기고 Light 대체 팔레트 및 Chart.js 축/범례 색상을 제공한다. 파일/레벨의 의미·파싱 엔진은 바꾸지 않는다. 상세 너비는 네이티브 range input의 포인터/키보드 조작을 사용해 260~560px로 제한한다. 1150px 이하에서는 단일 열 상세 배치, 모바일 메뉴는 가로 스크롤하고 현재 활성 화면도 계속 노출한다.
 
 본문 skip link, nav/region 라벨, focus-visible, 상태 알림, 가상 목록 방향키/Page/Home/End를 추가한다. 모바일 실제 viewport 높이를 반영해 마지막 행까지 이동한다. jsdom 동작 검증과 실제 브라우저 390px 배치·테마/Canvas·다운로드 스모크를 수행했다. 전체 WCAG 적합성/스크린리더/브라우저별 키보드 동작을 검증했다고 주장하지 않는다.
+
+## ADR-029 — Production 아티팩트의 브라우저 회귀 게이트 (2026-11-13, 진행)
+
+Playwright 1.65.0과 axe-core/playwright 4.14.0을 개발 의존성으로 추가한다. 실제 dist를 /LogScope-Studio/ 하위 경로의 정적 서버에서 제공하고 Chromium/Firefox/WebKit/390px mobile Chromium으로 검사한다. 앱 상태를 직접 주입하지 않고 File 입력·검색·파일 설정·다운로드 UI를 사용한다. 공개 가상 샘플만 사용하며 브라우저 오류/외부 HTTP 요청/POST 등을 검사한다. Vitest 대상은 src/tests로 한정해 Playwright 테스트를 이중 수집하지 않는다.
+
+로컬 Windows에서 브라우저 spawn UNKNOWN이 발생했으므로 이를 테스트 통과로 보지 않는다. Linux Actions 결과로 브라우저 회귀를 확인하고, 실패 trace/screenshot/report를 보존한다. 자동 axe 검사는 전체 WCAG·스크린리더 적합성을 보장하지 않는다. main 배포는 모든 검증 이후에만 실행하며 검증 브랜치는 배포하지 않는다.
+
+근거: [Playwright 구성](https://playwright.dev/docs/test-configuration), [GitHub Pages workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).

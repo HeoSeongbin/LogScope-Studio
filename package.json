@@ -1,14 +1,16 @@
 {
   "name": "logscope-studio",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Browser-local log analysis workspace",
   "scripts": {
     "dev": "vite",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.e2e.json",
     "lint": "eslint .",
     "test": "node scripts/build-worker-test.mjs && vitest run",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +27,9 @@
   },
   "private": true,
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/vite": "^4.3.5",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

@@ -1,6 +1,8 @@
 # 개발 진행
 
-현재 Phase: **Phase 8 UI/UX 및 내보내기 구현·자동 검증 및 브라우저 스모크 확인** (2026-11-13).
+현재 Phase: **Phase 9 테스트 및 배포 진행 중** (2026-11-13).
+
+Phase 9 진행: Production 하위 경로 E2E 7종×4 프로젝트와 axe/CI 게이트를 추가했다. 로컬 Chromium·Firefox는 테스트 본문 실행 전 spawn UNKNOWN으로 실패했고 완료 처리하지 않는다. GitHub Pages는 비활성 상태이며 최근 Actions는 build 성공/deploy 실패였다. 검증 브랜치의 Linux CI에서 실행 결과를 확인한 뒤 main 배포를 진행한다. 아래는 Phase 8까지의 확정 기록이다.
 다음 Phase: **Phase 9 테스트 및 배포**. 전체 E2E·브라우저 호환성·접근성 적합성·실제 Pages 배포는 미완료다.
 
 ## 시작 상태와 범위

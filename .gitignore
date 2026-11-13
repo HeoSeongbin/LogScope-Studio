@@ -3,3 +3,5 @@ dist/
 coverage/
 *.local
 .test-workers/
+test-results/
+playwright-report/

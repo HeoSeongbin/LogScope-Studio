@@ -196,3 +196,7 @@ HTML 리포트는 요약·범위/정책과 선택 데이터 전체를 정적 표
 ![Light 테마와 이벤트 상세](docs/screenshots/phase8-desktop-light.jpg)
 
 [모바일 Light](docs/screenshots/phase8-mobile-light.jpg) · [Light 차트](docs/screenshots/phase8-chart-light.jpg) · [Dark 차트](docs/screenshots/phase8-chart-dark.jpg)
+
+## Phase 9 검증 작업 (진행 중)
+
+`npm run build` 뒤 `npx playwright install --with-deps chromium firefox webkit`, `npm run test:e2e`로 Production 하위 경로 회귀를 실행합니다. `npm run test:e2e:report`로 보고서를 열 수 있습니다. 배포 URL 검증은 E2E_BASE_URL 환경 변수를 사용합니다. 결과가 확정되기 전에는 Phase 9/실제 배포를 완료로 표시하지 않습니다.
