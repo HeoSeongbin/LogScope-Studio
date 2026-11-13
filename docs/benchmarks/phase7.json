@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-12",
+  "method": "Production parsing worker in Node worker_threads; synthetic Spring lines ~1 KiB; one run per size in a fresh process. RSS includes fixture, main, worker and message cloning. Heartbeat is 10ms, not browser FPS.",
+  "results": [
+    {
+      "requestedMiB": 1,
+      "bytes": 1048575,
+      "events": 1023,
+      "expectedEvents": 1023,
+      "parserMs": 16.303700000000006,
+      "elapsedMs": 64.8999,
+      "maxMainHeartbeatGapMs": 18.7622,
+      "peakProcessRssBytes": 80719872,
+      "estimatedRetainedBytes": 11412588,
+      "failures": 0,
+      "node": "v24.12.0",
+      "platform": "win32",
+      "arch": "x64",
+      "cpu": "AMD Ryzen AI 7 350 w/ Radeon 860M              "
+    },
+    {
+      "requestedMiB": 10,
+      "bytes": 10485750,
+      "events": 10230,
+      "expectedEvents": 10230,
+      "parserMs": 107.71669999999999,
+      "elapsedMs": 192.3083,
+      "maxMainHeartbeatGapMs": 33.348600000000005,
+      "peakProcessRssBytes": 164712448,
+      "estimatedRetainedBytes": 114125880,
+      "failures": 0,
+      "node": "v24.12.0",
+      "platform": "win32",
+      "arch": "x64",
+      "cpu": "AMD Ryzen AI 7 350 w/ Radeon 860M              "
+    },
+    {
+      "requestedMiB": 50,
+      "bytes": 52428750,
+      "events": 51150,
+      "expectedEvents": 51150,
+      "parserMs": 455.15869999999995,
+      "elapsedMs": 697.8354,
+      "maxMainHeartbeatGapMs": 111.75780000000009,
+      "peakProcessRssBytes": 515264512,
+      "estimatedRetainedBytes": 570629400,
+      "failures": 0,
+      "node": "v24.12.0",
+      "platform": "win32",
+      "arch": "x64",
+      "cpu": "AMD Ryzen AI 7 350 w/ Radeon 860M              "
+    }
+  ]
+}

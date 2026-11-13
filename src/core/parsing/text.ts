@@ -45,12 +45,13 @@ export function dotnetWithMessage(input:LogInput,lines:SourceLine[],index:number
   // SimpleConsole writes its first message on a line with six spaces. Only that
   // formatter boundary is merged here; stack/cause continuations remain separate.
   const next=lines[index+1];
-  if(event.message===''&&next&&/^ {6}\S/.test(next.raw)&&!/^ {6}(?:at\s|Caused by:|--->|[\w.]+(?:Exception|Error)(?::|$))/.test(next.raw)){
+  if(event.message===''&&next&&dotnetMessageLine(next.raw)){
     event.message=next.raw.slice(6);event.lineEnd=next.number;event.rawText=input.text.slice(lines[index].start,next.end);
     return {event,consumed:2};
   }
   return {event,consumed:1};
 }
+export function dotnetMessageLine(raw:string){return /^ {6}\S/.test(raw)&&!/^ {6}(?:at\s|Caused by:|--->|[\w.]+(?:Exception|Error)(?::|$))/.test(raw);}
 export const genericParser:LogParser={id:'generic',name:'Generic Text',detect:()=>0,parse:input=>sourceLines(input.text).map(line=>genericEvent(input,line))};
 export const springParser:LogParser={id:'spring',name:'Spring Boot',detect:sample=>sourceLines(sample).some(line=>springLine.test(line.raw))?.95:0,parse:input=>rows(input,line=>parseSpringLine(input,line),'SPRING')};
 export const javaParser:LogParser={id:'java-pattern',name:'Logback / Log4j2',detect:sample=>sourceLines(sample).some(line=>javaPatterns.some(pattern=>pattern.test(line.raw)))?.9:0,parse:input=>rows(input,line=>parseJavaLine(input,line),'JAVA')};

@@ -9,20 +9,20 @@ afterEach(()=>useWorkspace.getState().reset());
 describe('file lifecycle',()=>{
   it('maintains actual trace identity and provenance across file configuration, reparse, removal and reset',async()=>{
     const api=readFileSync('public/samples/distributed-api.log','utf8'),db=readFileSync('public/samples/distributed-db.log','utf8');await useWorkspace.getState().upload([new File([api],'api.log')],{serviceName:'api'});await useWorkspace.getState().upload([new File([db],'db.log')]);const state=useWorkspace.getState(),id=state.files[1].id;
-    const group=()=>collectTraces(useWorkspace.getState().events,'requestId').find(group=>group.value==='req-demo-001')!;expect(buildTrace(group()).timed).toHaveLength(3);state.reparse(id,{timezone:'UTC',serviceName:'db'});expect(buildTrace(group()).timed).toHaveLength(5);expect(buildTrace(group()).untimed).toHaveLength(1);expect(useWorkspace.getState().sources[id]).toBe(db);
+    const group=()=>collectTraces(useWorkspace.getState().events,'requestId').find(group=>group.value==='req-demo-001')!;expect(buildTrace(group()).timed).toHaveLength(3);await state.reparse(id,{timezone:'UTC',serviceName:'db'});expect(buildTrace(group()).timed).toHaveLength(5);expect(buildTrace(group()).untimed).toHaveLength(1);expect(useWorkspace.getState().sources[id]).toBe(db);
     const before=useWorkspace.getState().events;expect(()=>state.reparse(id,{timezone:'Bad/Zone'})).toThrow();expect(useWorkspace.getState().events).toBe(before);state.setFileColor(id,'#ff0000');expect(useWorkspace.getState().events).toBe(before);expect(useWorkspace.getState().files[1].color).toBe('#ff0000');
-    state.reparse(id,{parser:'serilog'});expect(useWorkspace.getState().files[1].timezone).toBe('UTC');state.reparse(id,{correlationScope:'other'});expect(collectTraces(useWorkspace.getState().events,'requestId').filter(group=>group.value==='req-demo-001')).toHaveLength(2);state.remove(id);expect(group().events).toHaveLength(3);expect(useWorkspace.getState().sources[id]).toBeUndefined();state.reset();expect(collectTraces(useWorkspace.getState().events,'requestId')).toEqual([]);
+    await state.reparse(id,{parser:'serilog'});expect(useWorkspace.getState().files[1].timezone).toBe('UTC');await state.reparse(id,{correlationScope:'other'});expect(collectTraces(useWorkspace.getState().events,'requestId').filter(group=>group.value==='req-demo-001')).toHaveLength(2);state.remove(id);expect(group().events).toHaveLength(3);expect(useWorkspace.getState().sources[id]).toBeUndefined();state.reset();expect(collectTraces(useWorkspace.getState().events,'requestId')).toEqual([]);
   });
   it('recomputes statistics and timeline after real file upload, reparse and removal',async()=>{
     const text=readFileSync('public/samples/statistics-demo.jsonl','utf8');await useWorkspace.getState().upload([new File([text],'stats.jsonl'),new File(['INFO other'],'other.log')]);const state=useWorkspace.getState();const id=state.files[0].id;
     expect(aggregateStatistics(state.events).summary).toMatchObject({total:13,errors:5,exceptions:3});expect(buildTimeline(state.events,'1m').buckets).toHaveLength(5);
-    state.reparse(id,{parser:'generic'});expect(aggregateStatistics(useWorkspace.getState().events).summary.exceptions).toBe(0);expect(buildTimeline(useWorkspace.getState().events,'1m').buckets).toEqual([]);expect(useWorkspace.getState().sources[id]).toBe(text);
+    await state.reparse(id,{parser:'generic'});expect(aggregateStatistics(useWorkspace.getState().events).summary.exceptions).toBe(0);expect(buildTimeline(useWorkspace.getState().events,'1m').buckets).toEqual([]);expect(useWorkspace.getState().sources[id]).toBe(text);
     state.remove(id);expect(aggregateStatistics(useWorkspace.getState().events).summary.total).toBe(1);expect(buildTimeline(useWorkspace.getState().events,'1m').buckets).toEqual([]);
   });
   it('uploads merged stacks, reparses without duplicates and removes only derived file groups',async()=>{
     const text=readFileSync('public/samples/spring-exception.log','utf8');await useWorkspace.getState().upload([new File([text],'java.log'),new File(['INFO other'],'other.log')]);
     const state=useWorkspace.getState();const id=state.files[0].id;expect(state.files[0].count).toBe(3);expect(state.files[0].failures).toBe(0);expect(groupExceptions(state.events)[0].events).toHaveLength(2);expect(state.sources[id]).toBe(text);
-    state.reparse(id,{parser:'generic'});expect(groupExceptions(useWorkspace.getState().events)).toEqual([]);state.reparse(id,{parser:'spring'});expect(groupExceptions(useWorkspace.getState().events)[0].events).toHaveLength(2);expect(useWorkspace.getState().events).toHaveLength(4);state.remove(id);expect(groupExceptions(useWorkspace.getState().events)).toEqual([]);expect(useWorkspace.getState().events[0].message).toBe('INFO other');
+    await state.reparse(id,{parser:'generic'});expect(groupExceptions(useWorkspace.getState().events)).toEqual([]);await state.reparse(id,{parser:'spring'});expect(groupExceptions(useWorkspace.getState().events)[0].events).toHaveLength(2);expect(useWorkspace.getState().events).toHaveLength(4);state.remove(id);expect(groupExceptions(useWorkspace.getState().events)).toEqual([]);expect(useWorkspace.getState().events[0].message).toBe('INFO other');
   });
   it('uploads real Spring sample, removes only one file and resets',async()=>{
     await useWorkspace.getState().upload([new File([readFileSync('public/samples/spring-normal.log')],'spring.log'),new File(['INFO other'],'other.txt')]);
@@ -40,20 +40,17 @@ describe('file lifecycle',()=>{
     expect(useWorkspace.getState().events[0].rawText).toBe('A');
   });
   it('ignores a file read completing after reset',async()=>{
-    let finish!:(value:ArrayBuffer)=>void;
-    const file=new File(['late'],'late.log');
-    file.arrayBuffer=()=>new Promise(resolve=>{finish=resolve;});
-    const pending=useWorkspace.getState().upload([file]);useWorkspace.getState().reset();
-    finish(new TextEncoder().encode('late').buffer);await pending;
+    const pending=useWorkspace.getState().upload([new File(['late'],'late.log'),new File(['second'],'second.log')]);useWorkspace.getState().reset();
+    await pending;
     expect(useWorkspace.getState().files).toEqual([]);expect(useWorkspace.getState().events).toEqual([]);
   });
   it('reparses a single file from separate original source without duplicates',async()=>{
     const text='{"custom":"hello","severity":"Error"}\r\n{broken';
     await useWorkspace.getState().upload([new File([text],'json.log'),new File(['INFO other'],'other.log')],{parser:'generic'});
     const state=useWorkspace.getState();const file=state.files[0];const other=state.events.at(-1)!;state.select(other.id);
-    state.reparse(file.id,{parser:'json',fieldMapping:{message:'custom'}});
+    await state.reparse(file.id,{parser:'json',fieldMapping:{message:'custom'}});
     const after=useWorkspace.getState();expect(after.sources[file.id]).toBe(text);expect(after.events).toHaveLength(3);expect(after.events[0]).toMatchObject({message:'hello',level:'ERROR'});expect(after.files[0]).toMatchObject({failures:1,parserChoice:'json',count:2});expect(after.events[2]).toBe(other);expect(after.selectedId).toBe(other.id);
-    after.select(after.events[0].id);after.reparse(file.id,{parser:'generic'});expect(useWorkspace.getState().selectedId).toBeNull();expect(useWorkspace.getState().events).toHaveLength(3);
+    after.select(after.events[0].id);await after.reparse(file.id,{parser:'generic'});expect(useWorkspace.getState().selectedId).toBeNull();expect(useWorkspace.getState().events).toHaveLength(3);
     after.remove(file.id);expect(useWorkspace.getState().sources[file.id]).toBeUndefined();expect(useWorkspace.getState().events).toEqual([other]);
   });
   it('uploads every public Phase 2 fixture and records recoverable parsing failures',async()=>{

@@ -1,12 +1,12 @@
 {
   "name": "logscope-studio",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Browser-local log analysis workspace",
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "node scripts/build-worker-test.mjs && vitest run",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
   },

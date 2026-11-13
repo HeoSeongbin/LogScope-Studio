@@ -64,3 +64,11 @@ API 4개·DB 3개 정규화 이벤트 중 req-demo-001은 6개다. DB 파일 UTC
 추가 범위: MDC Thread 비혼동, 명시적 Java/.NET/JSON/IIS ID, custom JSON/배열 경로, 충돌/긴 ID/숫자/타입·scope·case 분리, Span Trace 문맥, nested stack ID 비상속, IANA/고정 offset·명시 로그 offset 우선·IIS UTC·DST gap/overlap reject·invalid calendar/zone·시각 부재.
 
 Node File 업로드/설정/재분석/색상/제거/초기화 및 원문/기존 상태의 원자적 보존을 확인했다. jsdom은 Trace 화면·서비스/시간 근거·ID 정확 검색·전체 세션 선택·원본 위치·설정 오류/해제·선택 그룹 삭제를 검증한다. 실제 브라우저/시간대 환경/모바일·접근성·Pages·대용량/청크 스트리밍은 미검증이다.
+
+## Phase 7 검증 (2026-11-12)
+
+타입 검사/ESLint/Production Build 통과, Vitest 15개 파일·162개 테스트 통과. streaming.test.ts는 모든 공개 샘플의 청크 불변성을 1/2/3/7/31/65536 바이트에서 동기 기준과 비교한다. UTF-8/BOM UTF-16, Unicode/CRLF/CR, JSON 문서/행 복구/같은 행 오프셋, 수동 형식/문맥 및 자원 한도를 검증한다.
+
+npm test는 실제 프로덕션 파싱 Worker를 먼저 빌드한다. parse-worker.test.ts/workspace.test.ts는 Node Worker의 실제 결과·진행률, 큐/취소/늦은 응답/제거/초기화, 준비·유휴 timeout·생성 실패, 재분석 원자성, 큰 원본 캐시 분리/미리보기/재시도를 검증한다. jsdom 설정 테스트도 실제 Worker 완료를 기다려 기존 파서/시간대/매핑 동작을 확인한다. 사용자 정규식의 실제 ReDoS 종료 테스트도 계속 통과한다.
+
+1/10/50 MiB 합성 로그 단일 실행의 실제 성능은 PERFORMANCE.md 및 benchmarks/phase7.json에 있다. 브라우저 E2E·실제 FPS·모바일·대표 실제 로그 분포·Pages 배포는 미검증이다. 위 Phase 1~6 절의 대용량/청크 미검증 표시는 해당 시점 이력이다.

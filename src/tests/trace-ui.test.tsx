@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { App } from '../app/App';
 import { TraceExplorer } from '../app/TraceExplorer';
@@ -24,12 +24,12 @@ describe('Trace Explorer integration',()=>{
     fireEvent.change(screen.getByRole('textbox',{name:'추적 식별자 값'}),{target:{value:'REQ-demo-001'}});fireEvent.click(screen.getByRole('button',{name:'식별자 검색'}));expect(screen.getByText('일치하는 식별자가 없습니다')).toBeInTheDocument();
     fireEvent.change(screen.getByRole('textbox',{name:'추적 식별자 값'}),{target:{value:'req-demo-002'}});fireEvent.click(screen.getByRole('button',{name:'식별자 검색'}));expect(screen.getByText('시간순 관측 이벤트 · 1개')).toBeInTheDocument();expect(screen.getByText(/계산 불가/)).toBeInTheDocument();
   });
-  it('preserves file settings during parser changes, clears assumptions explicitly and handles invalid timezones atomically',()=>{
+  it('preserves file settings during parser changes, clears assumptions explicitly and handles invalid timezones atomically',async()=>{
     useWorkspace.setState({events,files,sources:{api,db},fileId:'db'});render(<App/>);
     fireEvent.change(screen.getByRole('textbox',{name:'파일 시간대'}),{target:{value:'Not/AZone'}});fireEvent.click(screen.getByRole('button',{name:'파일 설정 적용 및 재분석'}));expect(screen.getByRole('alert')).toHaveTextContent('IANA');expect(useWorkspace.getState().files[1].timezone).toBe('UTC');
-    fireEvent.change(screen.getByRole('textbox',{name:'파일 시간대'}),{target:{value:'+00:00'}});fireEvent.change(screen.getByRole('textbox',{name:'파일 서비스명'}),{target:{value:'database-user-label'}});fireEvent.change(screen.getByRole('textbox',{name:'파일 식별자 범위'}),{target:{value:'demo-scope'}});fireEvent.click(screen.getByRole('button',{name:'파일 설정 적용 및 재분석'}));expect(useWorkspace.getState().events.find(event=>event.sourceFileId==='db')).toMatchObject({service:'database-user-label',serviceSource:'file-setting',assumedTimezone:'+00:00',correlationScope:'demo-scope'});expect(useWorkspace.getState().sources.db).toBe(db);
-    fireEvent.change(screen.getByRole('combobox',{name:'db.log 로그 형식'}),{target:{value:'serilog'}});expect(useWorkspace.getState().files[1].timezone).toBe('+00:00');
-    fireEvent.change(screen.getByRole('textbox',{name:'파일 시간대'}),{target:{value:''}});fireEvent.change(screen.getByRole('textbox',{name:'파일 서비스명'}),{target:{value:''}});fireEvent.click(screen.getByRole('button',{name:'파일 설정 적용 및 재분석'}));const updated=useWorkspace.getState().events.find(event=>event.sourceFileId==='db')!;expect(updated.timestamp).toBeNull();expect(updated.service).toBeUndefined();
+    fireEvent.change(screen.getByRole('textbox',{name:'파일 시간대'}),{target:{value:'+00:00'}});fireEvent.change(screen.getByRole('textbox',{name:'파일 서비스명'}),{target:{value:'database-user-label'}});fireEvent.change(screen.getByRole('textbox',{name:'파일 식별자 범위'}),{target:{value:'demo-scope'}});fireEvent.click(screen.getByRole('button',{name:'파일 설정 적용 및 재분석'}));await waitFor(()=>expect(useWorkspace.getState().events.find(event=>event.sourceFileId==='db')).toMatchObject({service:'database-user-label',serviceSource:'file-setting',assumedTimezone:'+00:00',correlationScope:'demo-scope'}));expect(useWorkspace.getState().sources.db).toBe(db);
+    fireEvent.change(screen.getByRole('combobox',{name:'db.log 로그 형식'}),{target:{value:'serilog'}});await waitFor(()=>expect(useWorkspace.getState().files[1]).toMatchObject({status:'done',parserChoice:'serilog',timezone:'+00:00'}));
+    fireEvent.change(screen.getByRole('textbox',{name:'파일 시간대'}),{target:{value:''}});fireEvent.change(screen.getByRole('textbox',{name:'파일 서비스명'}),{target:{value:''}});fireEvent.click(screen.getByRole('button',{name:'파일 설정 적용 및 재분석'}));await waitFor(()=>expect(useWorkspace.getState().files[1]).toMatchObject({status:'done',timezone:''}));const updated=useWorkspace.getState().events.find(event=>event.sourceFileId==='db')!;expect(updated.timestamp).toBeNull();expect(updated.service).toBeUndefined();
   });
   it('can inspect the whole session when common filters are pending or invalid, without claiming zero matches',()=>{
     render(<TraceExplorer events={[]} allEvents={events} files={files} select={()=>{}} filterPending filterError="기간 오류"/>);expect(screen.getByRole('alert')).toHaveTextContent('기간 오류');expect(screen.queryByText('일치하는 식별자가 없습니다')).not.toBeInTheDocument();fireEvent.click(screen.getByRole('checkbox',{name:/전체 세션에서 추적/}));expect(screen.getByText('시간순 관측 이벤트 · 5개')).toBeInTheDocument();

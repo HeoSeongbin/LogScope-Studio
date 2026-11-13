@@ -1,82 +1,66 @@
 # 개발 진행
 
-현재 Phase: **Phase 6 다중 파일 및 요청 추적 구현·자동 검증 완료** (2026-11-12).
-다음 Phase: **Phase 7 성능 최적화**. 실제 브라우저·Pages 배포·대용량/스트리밍 검증은 완료 처리하지 않았다.
+현재 Phase: **Phase 7 성능 최적화 구현·정의된 Node 환경 자동 검증 완료** (2026-11-12).
+다음 Phase: **Phase 8 UI/UX 및 내보내기**. 실제 브라우저 E2E·배포·저사양 환경 검증은 미완료다.
 
-## 시작 상태 확인
+## 시작 상태와 범위
 
-AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 실제 소스·Git을 확인했다. Phase 5 코드와 기록이 일치했고 기존 11개 파일/115개 테스트가 통과했다. main은 Phase 3·4·5 로컬 커밋으로 origin/main보다 3개 앞섰으며 작업 트리는 깨끗했다. 이번에는 Phase 6만 구현하고 새 커밋/푸시는 수행하지 않았다.
-
-이력: Phase 2 44e7b2f 게시 → Phase 3 1e7c9cd → Phase 4 b504c6c → Phase 5 1f5c9a5 로컬 커밋 → Phase 6 요청 추적.
+AGENTS.md, PROJECT.md, 이전 PROGRESS.md, DECISIONS.md, README.md 및 소스/Git을 비교했다. Phase 6 코드와 기록이 일치했고 기존 13개 파일·136개 테스트가 통과했다. main과 origin/main은 5af50f2로 같고 작업 트리는 깨끗했다. 이번 작업은 Phase 7만 구현했으며 커밋/푸시는 수행하지 않았다.
 
 ## 구현 내용
 
-- Request/Trace/Correlation/Span ID를 서로 구분해 실제 명시적 필드/이름 있는 key-value에서만 추출
-- Spring MDC bracket에서 식별자를 읽되 Thread와 혼동하지 않도록 분리, Java 패턴의 명시적 MDC bracket 지원
-- .NET/Serilog/Generic 첫 로그 헤더의 명시적 ID key-value 지원. Stack Trace 자식 행에서 다른 ID를 빌리지 않음
-- JSON 별칭·Correlation/Span/custom ID 수동 매핑, own property 경로 및 배열 인덱스 경로 지원. 숫자를 ID로 강제 변환하지 않음
-- IIS #Fields에 실제 선언된 request-id/trace-id/cs(X-Request-ID) 등 custom ID 컬럼 지원. HTTP 상태/IP를 ID로 추정하지 않음
-- 같은 텍스트 타입의 여러 값이 충돌하거나 256자를 초과하면 ID를 선택/절단하지 않고 진단 보존
-- 파일별 시간대/서비스명/식별자 연결 범위와 색상 설정. parser/JSON 매핑 변경 시 기존 파일 설정을 유지하고 빈 값으로 명시적 해제
-- 시간대 없는 전체 날짜에만 사용자 IANA/고정 오프셋 적용. 원문 오프셋·실제 서비스·IIS UTC는 우선 보존
-- Temporal polyfill 0.5.1로 DST 중복/누락 시각 reject. 잘못된 달력·부분 시각·날짜 부재를 임의 보정하지 않음
-- serviceSource/timeSource/assumedTimezone로 로그/형식/파일 설정 근거를 분리. 원문·parsedFields 변경 없음
-- 정확한 (ID 타입, 사용자 연결 범위, 값) 그룹. Span은 실제 Trace ID 문맥도 같아야 연결. 대소문자·다른 타입·범위를 임의 동치로 만들지 않음
-- Request Trace Explorer: ID 타입/정확값 검색, 현재 공통 필터 또는 명시적 전체 세션, 서비스/파일별 관측 흐름, 오류 강조, 원본 선택
-- 정규화 시각 순서와 동률 입력 순서, 미확인 시각의 별도 목록, 관측 간격만 계산하고 요청 처리시간/인과관계/완전한 Span 트리로 확정하지 않음
-- 현재 검색이 pending/error여도 전체 세션 모드는 명시적으로 선택 가능. 선택했던 그룹 삭제 시 다른 ID로 몰래 대체하지 않음
-- 가상 distributed-api.log / distributed-db.log 샘플 2종 추가
+- 전용 파싱 Worker, 단일 활성 작업 큐, 실제 단계별 바이트 진행률, 취소/재시도 및 제한 시간
+- 64 KiB 청크·fatal 스트리밍 UTF-8/UTF-16 BOM 디코더, CR/LF/CRLF와 Unicode/부분 행 보존
+- 파일 전체 IIS #Fields 문맥 사전 스캔, JSON 문서 우선/배열 레코드 상태기계 및 실패 시 행 복구
+- ILogger 다음 메시지·Java/.NET Stack Trace 상태를 청크 사이에 유지. 기존 공통 파서·예외/ID/시간대 정규화 재사용
+- 원본 File/Blob과 분석 이벤트 분리. 512 KiB 이하 디코딩 캐시, 큰 원본의 제한된 미리보기
+- 성공 시 해당 파일 결과/메타데이터 원자적 교체. 실패·취소 시 기존 결과 유지, 삭제/초기화 시 Worker 종료와 늦은 응답 차단
+- 파일 50 MiB/원본 세션 64 MiB, 이벤트 파일 200,000/세션 250,000개, 행 1 Mi/레코드 2 Mi 문자 보호
+- 추정 보관량 파일 640 MiB/세션 768 MiB 보호. 한도 초과는 명시적 PARSE_LIMIT 실패로 기록하고 결과를 몰래 자르지 않음
+- 이벤트 검색 필드 WeakMap 재사용, 레벨 집계 단일 순회, 선택 이벤트 색인, 파일 결과 교체 시 반복 전체 필터 제거
+- 파서 목록을 가벼운 모듈로 분리. Temporal과 실제 파싱 엔진은 Worker 번들로 이동
+- 프로덕션 Worker를 Node worker_threads로 실행하는 테스트/측정 도구, 1/10/50 MiB 벤치마크
 
-## 실제 검증 결과 (2026-11-12)
+## 실제 검증 결과
 
-- `npm run typecheck`: 통과
-- `npm run lint`: 통과
-- `npm test`: **13개 파일·136개 테스트 통과**, 기존 115개 회귀 포함
-- `npm run build`: 통과. Temporal 추가로 메인 chunk 약 650 kB / gzip 약 206 kB, 500 kB 기준 경고 발생. 경고 한도를 높여 숨기지 않았음
-- 실제 API 샘플 6줄 → 4개 이벤트, DB 샘플 5줄 → 3개 이벤트. req-demo-001은 파일 간 6개 이벤트
-- DB 파일 UTC·서비스 설정 후 해당 요청의 시간순 5개 + 미확인 시각 1개, 최초~최종 관측 간격 4030ms, ERROR 2개. 누락/다른 request ID를 생성하지 않음
-- MDC/Java/.NET/JSON/IIS 명시적 ID·충돌·긴 값·숫자·중첩 스택 비상속·타입/범위/대소문자 분리·Span Trace 문맥 검증
-- 파일 IANA/고정 오프셋, 원문 오프셋 우선, IIS UTC, DST 중복/누락 거절, invalid zone/calendar, 부분/누락 시각 검증
-- Node File 실제 업로드·재분석·설정 유지/해제·무효 설정 원자적 거절·색상 변경 시 이벤트 불변·제거·초기화 검증
-- jsdom Trace Explorer의 파일 간 목록·시각 분리·원본 위치·ID 타입/정확값·전체 세션·공통 필터·설정 오류/적용·선택 그룹 삭제 검증
-- 실제 브라우저 E2E·시각/모바일/접근성·IANA 환경 호환성 실측·Pages 배포·대용량/청크 경계 성능은 **미검증**
+- npm run typecheck: 통과
+- npm run lint: 통과
+- npm test: 15개 파일·162개 테스트 통과 (기존 기능 회귀 포함)
+- npm run build: 통과, 메인 약 473 kB / gzip 154 kB, 파싱 Worker 약 189 kB. 기존 약 650 kB 경고 해소
+- 모든 공개 샘플과 청크 1/2/3/7/31/65536 바이트에서 동기 기준 파서와 이벤트/원문/행/ID/진단/형식 이름 일치
+- UTF BOM/문자 경계, CRLF/CR, JSON 같은 행의 여러 레코드·중첩·배열·깨진 문서 복구, 파싱 실패 원인 및 자원 한도 검증
+- 실제 Worker 완료/진행률, 큐 직렬화·대기/실행 취소·늦은 응답·시작/유휴 제한·시작 실패 검증
+- 원본 분리·큰 원본 미리보기·취소 후 기존 결과 보존/재시도·제거/초기화 중 응답 차단 검증
+- Node 실측 1/10/50 MiB: 각각 1,023/10,230/51,150개 이벤트, 파싱 실패 0. 상세는 PERFORMANCE.md와 benchmarks/phase7.json
 
 ## 발견 및 해결한 문제
 
-- 시간대 없는 로그를 파일 간 비교할 수 없었음 → 명시적 사용자 시간대 설정과 근거 표시, DST ambiguity reject
-- 원문 서비스와 사용자 라벨을 섞을 위험 → 실제 로그 필드 우선·누락 시 fallback·serviceSource 표시
-- MDC bracket이 Thread로 잘못 파싱될 위험 → 명시적 ID bracket 분리, 문맥이 과도하면 Thread 미확인 진단
-- ID가 같은 문자열이라는 이유로 다른 타입/범위를 합칠 위험 → typed/scoped tuple 및 Span의 실제 Trace 문맥
-- Stack Trace 자식의 ID가 부모에 붙을 위험 → 첫 root 로그 헤더만 텍스트 추출
-- 재분석에서 파일 설정이 사라질 위험 → 기존 옵션과 변경 옵션을 합쳐 원문에서 재파싱
-- DST 실패 후 기존 시간대 미지정 경고가 부정확해질 위험 → 해당 경고를 실제 설정 해석 불가 진단으로 교체
-- 잘못된 시간대 설정은 원문/기존 이벤트/파일 메타데이터를 바꾸지 않고 거절
+- IIS 문맥을 행 도착 시에만 판단하면 이전 행 해석이 바뀜 → 전체 사전 스캔
+- JSON 배열을 행 단위로 자르면 원문 위치와 문서 우선순위가 달라짐 → 상태기계로 정확한 문자 오프셋 보존
+- 재분석 완료 전 결과 교체/취소 후 늦은 커밋 위험 → 작업 토큰과 성공 시 교체
+- 50 MiB 표준 합성 입력이 최초 512 MiB 추정 한도에 걸림 → 계산식/실제 RSS를 확인하고 파일 한도를 640 MiB로 조정. 실제 heap 보장으로 표현하지 않음
+- 대형 원본 문자열 복제 및 DOM 렌더링 위험 → 원본 Blob 보관·512 KiB 미리보기
+- 비동기 전환 후 기존 즉시 결과 테스트 → 실제 Worker 완료를 기다리며 동일 동작 검증
 
 ## 알려진 제약 / 미완료
 
-- 텍스트의 명시적 key:value/key=value와 지원 MDC 패턴만 읽음. 이름 없는 MDC 값/임의 UUID·숫자는 의미를 추정하지 않음
-- 같은 ID의 재사용/시계 오차/부분 로그만으로 인과관계·완전한 요청 수명·Span parent 구조를 보장하지 않음
-- ID 값은 case-sensitive exact match. 타입 사이 전이 연결이나 자동 aliasing 없음. 환경/테넌트가 다르면 사용자가 파일 연결 범위를 지정해야 함
-- 사용자 지정 ID는 JSON 명시적 필드 매핑으로만 지원. arbitrary regex/code 실행 없음
-- 파일 서비스명은 로그에 service가 없을 때만 적용. 시간대는 full date의 오프셋 없는 값에만 적용. 날짜 없는 시각·유효하지 않은 시각은 null 유지
-- IANA 해석은 실행 환경의 Intl 시간대 데이터에 의존. 대표 DST 사례는 Node 자동 검증했지만 모든 지역/역사 시각·브라우저를 실측하지 않음
-- 시간대 설정은 정규화 가정이며 원문 변경/자동 서버 시계 보정이 아님. UTC 통계 버킷과 실제 프로세스의 현지 일/DST 정책은 별개
-- ID/시간순/미확인 목록은 각각 50개 페이지. 처음에는 목록의 첫 그룹을 표시하며 명시적으로 고른 그룹이 사라지면 재선택 안내
-- 추적 결과 다운로드는 Phase 8의 내보내기 범위로 남김. 현재 지원한다고 표시하지 않음
-- 파싱/ID 색인/타임라인 계산은 메인 스레드. 파일당 2 MiB/세션 8 MiB 보호 한도 유지, 메모리/성능 한도 미측정
-- Temporal 도입 후 bundle 크기 경고가 있음. 코드 분할/파싱 Worker·스트리밍·성능 측정은 Phase 7
-- npm 설치 시 moderate 10건 보고. 상세 재감사/강제 의존성 변경은 미실행
+- 벤치마크는 Windows x64/Node 24/Ryzen AI 7 350의 합성 Spring 로그 단일 실행. 브라우저 성능/FPS·실제 로그 분포·저사양·동시 다중 대용량 보장 없음
+- 50 MiB 메시지 전달 때 메인 heartbeat 간격 약 112 ms. 일반 검색·필터·집계·추적·결과 복제는 메인 스레드에 남아 큰 결과에서 멈춤 가능
+- 추정 보관량은 경험적 보호 값이며 RSS/heap 하드 상한이 아님. 특히 구조화 필드/문자열·예외 트리/GC·분석 색인에 따라 증가
+- 짧은 행이 많은 파일/긴 단일 행/거대한 JSON 레코드는 파일 바이트 한도 전에도 거절. 임의 절단/정보 생성 없음
+- 사전 스캔 + 파싱의 두 번 읽기, 깨진 JSON 후보는 복구를 위한 추가 읽기 가능
+- 브라우저 E2E·시각/모바일/접근성·IANA 환경 호환성 실측·Pages 배포는 미검증
+- 이전 설치에서 npm moderate 10건 보고. 상세 재감사/강제 의존성 변경은 이번 범위에 포함하지 않음
 
 ## 변경 파일
 
-- 모델/파서: src/types/log.ts, src/core/parsers.ts, src/core/parsing/json.ts, text.ts, src/core/search.ts
-- 신규 엔진: src/core/file-context.ts, src/core/correlation/identifiers.ts, trace.ts
-- 상태/UI: src/stores/workspace.ts, src/app/FileParserSettings.tsx, TraceExplorer.tsx, App.tsx, src/style.css
-- 샘플: public/samples/distributed-api.log, distributed-db.log
-- 테스트: src/tests/correlation.test.ts, trace-ui.test.tsx, workspace.test.ts
-- 문서: README.md, docs/PROGRESS.md, DECISIONS.md, ARCHITECTURE.md, TEST-CASES.md
-- 의존성/버전: @js-temporal/polyfill 0.5.1, package.json/package-lock.json → 0.6.0
+- 파싱: src/core/parsing/{policy,stream-reader,stream-parser,json-stream,parse-blob,worker-client,finalize}.ts, text.ts, parsers.ts, parser-catalog.ts, zone-validation.ts
+- Worker/상태/모델: src/workers/parse.worker.ts, src/stores/workspace.ts, src/types/log.ts
+- UI/검색: src/app/App.tsx, FileParserSettings.tsx, src/core/search.ts
+- 테스트: streaming.test.ts, parse-worker.test.ts, node-parse-worker.ts, setup.ts 및 기존 workspace/App/trace-ui/correlation 회귀 테스트
+- 도구/설정: scripts/*, .gitignore, eslint.config.js, package.json, package-lock.json (0.7.0)
+- 문서: README.md, PROGRESS.md, DECISIONS.md, ARCHITECTURE.md, TEST-CASES.md, PERFORMANCE.md, benchmarks/phase7.json
 
 ## 다음 작업
 
-Phase 7: 파싱 Worker와 청크 디코더, 행·Stack 상태 유지/청크 불변성, 진행률/취소/늦은 응답 무시, 이벤트/메모리 한도·검색/집계 비용 및 번들 분할, 1/10/50 MB 실제 성능 측정. 기존 파서·예외·검색·통계·추적의 원본/ID/타임존 정확성을 회귀 검증한다.
+Phase 8: Dark/Light, 반응형·패널 크기·접근성·오류 안내, 명시적 CSV/JSON 및 분석 리포트 내보내기. 사용자 지시 후 진행한다. 실제 브라우저 Worker/UI 확인은 미완료 항목으로 유지한다.

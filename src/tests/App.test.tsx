@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { App } from '../app/App';
 import { useWorkspace } from '../stores/workspace';
 import { parseLog } from '../core/parsers';
@@ -15,7 +15,7 @@ describe('explorer',()=>{
   it('selects upload formats without parsing until a file is provided',()=>{
     render(<App/>);const select=screen.getByRole('combobox',{name:'새 파일 로그 형식'});fireEvent.change(select,{target:{value:'iis'}});expect(select).toHaveValue('iis');expect(useWorkspace.getState().events).toEqual([]);
   });
-  it('allows per-file format and field mapping changes and shows untouched source',()=>{
+  it('allows per-file format and field mapping changes and shows untouched source',async()=>{
     const source='{"body":"hello","level":"ERROR"}';
     const events=parseLog({text:source,fileId:'json',fileName:'json.log'},{parser:'generic'}).events;
     const file={id:'json',name:'json.log',size:source.length,status:'done' as const,parserChoice:'generic' as const,count:1,warnings:0};
@@ -23,9 +23,9 @@ describe('explorer',()=>{
     function Settings(){const file=useWorkspace(state=>state.files[0]);return <FileParserSettings file={file}/>;}
     render(<Settings/>);
     fireEvent.change(screen.getByRole('combobox',{name:'json.log 로그 형식'}),{target:{value:'json'}});
-    expect(useWorkspace.getState().events[0].parserId).toBe('json');
+    await waitFor(()=>expect(useWorkspace.getState().events[0].parserId).toBe('json'));
     fireEvent.click(screen.getByText('JSON 필드 매핑'));fireEvent.change(screen.getByRole('textbox',{name:'Message 매핑'}),{target:{value:'body'}});fireEvent.click(screen.getByRole('button',{name:'매핑 적용 및 재분석'}));
-    expect(useWorkspace.getState().events[0].message).toBe('hello');expect(screen.getByRole('combobox',{name:'json.log 로그 형식'})).toHaveValue('json');
-    fireEvent.click(screen.getByRole('button',{name:'파일 원본 보기'}));expect(screen.getByText(source,{selector:'pre'})).toBeInTheDocument();
+    await waitFor(()=>expect(useWorkspace.getState().events[0].message).toBe('hello'));expect(screen.getByRole('combobox',{name:'json.log 로그 형식'})).toHaveValue('json');
+    fireEvent.click(screen.getByRole('button',{name:'파일 원본 보기'}));await waitFor(()=>expect(screen.getByText(source,{selector:'pre'})).toBeInTheDocument());
   });
 });

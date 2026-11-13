@@ -1,3 +1,5 @@
+> Phase 1~6 설명은 당시 설계 이력입니다. 현재 파싱/원본 수명과 한도는 마지막 Phase 7 절을 기준으로 합니다.
+
 # 파싱 및 검색 아키텍처
 
 ```mermaid
@@ -103,3 +105,9 @@ flowchart LR
 ```
 
 file-context.ts는 로그/형식/사용자 설정의 근거와 Temporal 시간 해석을 분리한다. correlation/identifiers.ts는 명시적 키만 읽고 trace.ts는 typed/scoped 그룹과 관측 시간 목록을 만든다. SourceFile 설정을 보존한 재파싱이므로 ID/원본 위치는 바뀌지 않으며 파일 제거/초기화가 모든 파생 결과에 반영된다. 별도 원격 API/영구 저장은 없다. 통계는 파일 설정으로 해석된 epoch도 포함하지만 UTC 버킷 정책은 그대로다. 파싱/그룹 계산 Worker와 번들 분할은 Phase 7에서 수행한다.
+
+## Phase 7 파싱 및 원본 수명
+
+UI → workspace.upload/reparse → 단일 활성 파싱 큐 → parse.worker → parseBlob으로 전달한다. parseBlob은 stream-reader 사전 스캔 후 StreamTextParser 또는 JsonDocumentStream을 사용한다. finalizeEvent는 기존 식별자/파일 문맥을 적용한다. 공통 기준 파서는 테스트 비교용이며 제품 UI가 동기 파싱을 호출하지 않는다.
+
+원본 Blob은 별도 Map, 작은 디코딩 캐시는 sources, 정규화 이벤트는 events에 둔다. Worker 결과 성공 시 이벤트/설정/진단을 함께 바꾸고 실패나 취소에서는 기존 완료 결과를 유지한다. reset/remove는 작업 토큰과 원본 참조를 정리한다. 미리보기는 최대 512 KiB다. 진행률은 단계별 바이트 기준이다. 자원 한도와 Node 실측은 PERFORMANCE.md에 기록한다. 필터/통계/추적은 메인 스레드의 파생 메모이제이션을 유지한다.

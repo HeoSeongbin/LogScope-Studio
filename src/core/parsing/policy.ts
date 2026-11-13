@@ -1,0 +1,11 @@
+export const MAX_FILE_BYTES=50*1024*1024;
+export const MAX_SESSION_BYTES=64*1024*1024;
+export const MAX_EVENTS=200000;
+export const MAX_SESSION_EVENTS=250000;
+export const MAX_ESTIMATED_BYTES=640*1024*1024;
+export const MAX_SESSION_ESTIMATED_BYTES=768*1024*1024;
+export const MAX_LINE_CHARS=1024*1024;
+export const MAX_RECORD_CHARS=2*1024*1024;
+export const SOURCE_CACHE_BYTES=512*1024;
+export const CHUNK_BYTES=64*1024;
+export class ParseLimitError extends Error { constructor(message:string){super(`PARSE_LIMIT: ${message}`);this.name='ParseLimitError';} }

@@ -43,14 +43,14 @@ describe('explicit identifiers and type/scope separation',()=>{
 });
 describe('file timezone and explicit metadata provenance',()=>{
   it('normalizes only offset-free full timestamps with a user timezone and keeps source fields intact',()=>{
-    const text='2026-11-06 14:30:00.123 INFO 1 --- [main] demo.App : ready';const event=parse(text,{timezone:'Asia/Seoul',serviceName:'demo-api'})[0];expect(event).toMatchObject({timestamp:Date.parse('2026-11-06T05:30:00.123Z'),rawTimestamp:'2026-11-06 14:30:00.123',timezone:'Asia/Seoul',timeSource:'file-setting',assumedTimezone:'Asia/Seoul',service:'demo-api',serviceSource:'file-setting',rawText:text});expect(event.parseWarnings?.join()).not.toContain('시간대 미지정');expect(event.parsedFields).toEqual({pid:1});
+    const text='2026-11-06 14:30:00.123 INFO 1 --- [main] demo.App : ready';const event=parse(text,{timezone:'Asia/Seoul',serviceName:'demo-api'})[0];expect(event).toMatchObject({timestamp:Date.parse('2026-11-06T05:30:00.123Z'),rawTimestamp:'2026-11-06 14:30:00.123',timezone:'Asia/Seoul',timeSource:'file-setting',assumedTimezone:'Asia/Seoul',service:'demo-api',serviceSource:'file-setting',rawText:text});expect((event.parseWarnings??[]).join()).not.toContain('시간대 미지정');expect(event.parsedFields).toEqual({pid:1});
   });
   it('preserves explicit offsets, actual service and IIS UTC despite conflicting file configuration',()=>{
     const event=json({timestamp:'2026-11-06T14:30:00+09:00',service:'logged-service',message:'ok'},{timezone:'America/New_York',serviceName:'configured'});expect(event).toMatchObject({timestamp:Date.parse('2026-11-06T05:30:00Z'),timezone:'+09:00',timeSource:'log',service:'logged-service',serviceSource:'log'});expect(event.assumedTimezone).toBeUndefined();
     const iis=parse('#Fields: date time sc-status\n2026-11-06 05:30:00 200',{timezone:'+09:00'})[0];expect(iis).toMatchObject({timezone:'Z',timeSource:'format',timestamp:Date.parse('2026-11-06T05:30:00Z')});
   });
   it('rejects DST overlaps and gaps rather than moving the input to a different clock time',()=>{
-    for(const timestamp of ['2026-11-01 01:30:00','2026-03-08 02:30:00']){const event=json({timestamp,message:'DST'},{timezone:'America/New_York'});expect(event.timestamp).toBeNull();expect(event.rawTimestamp).toBe(timestamp);expect(event.parseWarnings?.join()).toContain('TIMEZONE_UNRESOLVED');expect(event.parseWarnings?.join()).not.toContain('시간대 미지정');}
+    for(const timestamp of ['2026-11-01 01:30:00','2026-03-08 02:30:00']){const event=json({timestamp,message:'DST'},{timezone:'America/New_York'});expect(event.timestamp).toBeNull();expect(event.rawTimestamp).toBe(timestamp);expect((event.parseWarnings??[]).join()).toContain('TIMEZONE_UNRESOLVED');expect((event.parseWarnings??[]).join()).not.toContain('시간대 미지정');}
     expect(json({timestamp:'2026-11-01 01:30:00-04:00',message:'explicit'},{timezone:'America/New_York'}).timestamp).toBe(Date.parse('2026-11-01T05:30:00Z'));
   });
   it('supports fixed offsets and rejects invalid zones or calendar dates',()=>{

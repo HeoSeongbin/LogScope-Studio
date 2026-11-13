@@ -3,7 +3,7 @@ import { Activity, Upload, FileText, Trash2, ShieldCheck, Layers, ChevronRight, 
 import { useWorkspace } from '../stores/workspace';
 import { levels } from '../types/log';
 import type { ParserChoice } from '../types/log';
-import { parserChoices } from '../core/parsers';
+import { parserChoices } from '../core/parser-catalog';
 import { FileParserSettings } from './FileParserSettings';
 import { formatEvent } from '../core/format';
 import { SearchControls } from './SearchControls';
@@ -26,8 +26,9 @@ export function App(){
   const selectedFile=store.files.find(file=>file.id===store.fileId);
   const result=useExplorerSearch(store.events,store.selectedLevels,store.fileId,store.filters,store.search);
   const filtered=result.events;
-  const selected=store.events.find(event=>event.id===store.selectedId);
-  const counts=useMemo(()=>Object.fromEntries(levels.map(level=>[level,store.events.filter(event=>event.level===level).length])),[store.events]);
+  const eventIndex=useMemo(()=>new Map(store.events.map(event=>[event.id,event])),[store.events]);
+  const selected=store.selectedId?eventIndex.get(store.selectedId):undefined;
+  const counts=useMemo(()=>(()=>{const counts=Object.fromEntries(levels.map(level=>[level,0]));for(const event of store.events)counts[event.level]++;return counts;})(),[store.events]);
   const viewKey=JSON.stringify([store.sessionVersion,store.fileId,store.selectedLevels,store.filters,store.search,store.events.length]);
   async function sample(){
     try { const response=await fetch(`${import.meta.env.BASE_URL}samples/${sampleFile}`);if(!response.ok)throw new Error('샘플을 읽지 못했습니다.');await store.upload([new File([await response.text()],sampleFile)]);setNotice('가상 샘플 로그를 불러왔습니다.'); }
@@ -45,7 +46,7 @@ export function App(){
       <div className="nav-note">분석은 공통 조건을 사용하며 요청 추적은 전체 범위도 선택할 수 있습니다.</div>
       <div className="section-label">소스 파일 <span>{store.files.length}</span></div>
       <button className={`file-item ${!store.fileId?'chosen':''}`} onClick={()=>{store.setFile('');}}><Layers size={16}/> 모든 파일 <span>{store.events.length}</span></button>
-      <div className="file-list">{store.files.map(file=><div style={{borderLeft:`3px solid ${file.color??'#7cbbef'}`}} key={file.id} className={`source ${store.fileId===file.id?'chosen':''}`}><button onClick={()=>{store.setFile(file.id);}}><FileText size={16}/><span title={file.name}>{file.name}<small>{(file.size/1024).toFixed(1)} KiB · {file.status==='reading'?'읽는 중':file.status==='error'?'실패':`${file.count}개 이벤트`}</small></span></button><button aria-label={`${file.name} 제거`} onClick={()=>store.remove(file.id)}><X size={13}/></button>{file.error&&<p className="error-text">{file.error}</p>}</div>)}</div>
+      <div className="file-list">{store.files.map(file=><div style={{borderLeft:`3px solid ${file.color??'#7cbbef'}`}} key={file.id} className={`source ${store.fileId===file.id?'chosen':''}`}><button onClick={()=>{store.setFile(file.id);}}><FileText size={16}/><span title={file.name}>{file.name}<small>{(file.size/1024).toFixed(1)} KiB · {file.status==='reading'?`${file.phase??'queued'} ${file.progress??0}%`:file.status==='cancelled'?'취소됨':file.status==='error'?'실패':`${file.count}개 이벤트`}</small></span></button><button aria-label={`${file.name} 제거`} onClick={()=>store.remove(file.id)}><X size={13}/></button>{file.status==='reading'&&<button aria-label={`${file.name} 분석 취소`} onClick={()=>store.cancelParse(file.id)}>취소</button>}{file.error&&<p className="error-text">{file.error}</p>}</div>)}</div>
       <button className="add-source" onClick={()=>input.current?.click()}>+ 파일 추가</button>
       <div className="section-label">로그 레벨 <button onClick={()=>{for(const level of store.selectedLevels)store.toggleLevel(level);}}>해제</button></div>
       {levels.map(level=><button key={level} className="level-filter" aria-pressed={store.selectedLevels.includes(level)} onClick={()=>{store.toggleLevel(level);}}><span className={`check ${store.selectedLevels.includes(level)?'checked':''}`}>{store.selectedLevels.includes(level)?'✓':''}</span><span className={`dot ${level}`}/>{level}<span>{counts[level]}</span></button>)}
@@ -54,11 +55,11 @@ export function App(){
     <div className="main-shell">
       <header><div className="breadcrumb">워크스페이스 <ChevronRight size={13}/><strong>{viewTitle}</strong></div><span className="local-status">● 로컬 분석</span><button className="primary" onClick={()=>input.current?.click()}><Upload size={15}/> 로그 업로드</button></header>
       <main>
-        <div className="page-heading"><div><div className="eyebrow">LOG EXPLORER</div><h1>{viewTitle}<span>Phase 6</span></h1><p>흩어진 로그를 한곳에서. 문제의 시작을 찾아보세요.</p></div><button className="subtle" onClick={store.reset} disabled={!store.files.length}><Trash2 size={14}/> 세션 초기화</button></div>
+        <div className="page-heading"><div><div className="eyebrow">LOG EXPLORER</div><h1>{viewTitle}<span>Phase 7</span></h1><p>흩어진 로그를 한곳에서. 문제의 시작을 찾아보세요.</p></div><button className="subtle" onClick={store.reset} disabled={!store.files.length}><Trash2 size={14}/> 세션 초기화</button></div>
         <div className="metrics">{[['전체 이벤트',store.events.length,'전체 파일에서 수집'],['ERROR',counts.ERROR,'오류 레벨 이벤트'],['WARN',counts.WARN,'경고 레벨 이벤트'],['소스 파일',store.files.filter(file=>file.status==='done').length,'분석 완료 파일']].map(([label,value,caption])=><div className="metric" key={label}><div>{label}<span className={label==='ERROR'?'error-icon':''}>◈</span></div><strong>{Number(value).toLocaleString()}</strong><small>{caption}</small></div>)}</div>
         <div className="upload-format"><label>새 파일 로그 형식 <select aria-label="새 파일 로그 형식" value={uploadParser} onChange={event=>setUploadParser(event.target.value as ParserChoice)}>{parserChoices.map(choice=><option key={choice.id} value={choice.id}>{choice.name}</option>)}</select></label><span>업로드 후 왼쪽 파일을 선택하면 형식을 바꿀 수 있습니다.</span></div>
         <section className={`drop-zone ${drag?'dragging':''}`} onDragOver={event=>{event.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)} onDrop={event=>{event.preventDefault();setDrag(false);void store.upload(Array.from(event.dataTransfer.files),{parser:uploadParser});}}>
-          <span className="upload-icon"><Upload size={22}/></span><div><h2>로그 파일을 여기에 놓아주세요</h2><p>텍스트 기반 로그 · 파일당 2 MiB / 세션 8 MiB · UTF-8 및 UTF-16 BOM</p></div><button onClick={()=>input.current?.click()}>파일 선택</button><select aria-label="샘플 로그" value={sampleFile} onChange={event=>setSampleFile(event.target.value)}><option value="spring-normal.log">Spring 기본</option><option value="spring-exception.log">Java 반복 예외</option><option value="dotnet-exception.log">.NET 내부 예외</option><option value="incomplete-exception.log">불완전한 예외</option><option value="statistics-demo.jsonl">오류 집중 구간</option><option value="distributed-api.log">요청 추적 API</option><option value="distributed-db.log">요청 추적 DB</option></select><button className="sample" onClick={()=>void sample()}>샘플 불러오기 <ChevronRight size={13}/></button>
+          <span className="upload-icon"><Upload size={22}/></span><div><h2>로그 파일을 여기에 놓아주세요</h2><p>텍스트 기반 로그 · 파일당 50 MiB / 세션 64 MiB · 이벤트/레코드 보호 한도 적용 · UTF-8 및 UTF-16 BOM</p></div><button onClick={()=>input.current?.click()}>파일 선택</button><select aria-label="샘플 로그" value={sampleFile} onChange={event=>setSampleFile(event.target.value)}><option value="spring-normal.log">Spring 기본</option><option value="spring-exception.log">Java 반복 예외</option><option value="dotnet-exception.log">.NET 내부 예외</option><option value="incomplete-exception.log">불완전한 예외</option><option value="statistics-demo.jsonl">오류 집중 구간</option><option value="distributed-api.log">요청 추적 API</option><option value="distributed-db.log">요청 추적 DB</option></select><button className="sample" onClick={()=>void sample()}>샘플 불러오기 <ChevronRight size={13}/></button>
         </section>
         <input ref={input} type="file" multiple className="sr-only" aria-label="로그 파일 업로드" onChange={event=>{void store.upload(Array.from(event.target.files??[]),{parser:uploadParser});event.target.value='';}}/>
         {notice&&<p role="status" className="notice">{notice}</p>}
@@ -78,7 +79,7 @@ export function App(){
         </div>
         <div className="footnote"><ShieldCheck size={13}/> 로그는 외부로 전송되지 않습니다.<span>Spring · Logback/Log4j2 · .NET · Serilog · JSON · IIS W3C</span></div>
       </main>
-      <footer><span className="status-dot"/> {store.files.some(file=>file.status==='reading')?'파일을 분석하고 있습니다':'분석 준비 완료'}<span>{store.events.length.toLocaleString()} 이벤트</span><span>{store.files.reduce((sum,file)=>sum+file.warnings,0)}개 경고</span><span>{store.files.reduce((sum,file)=>sum+(file.failures??0),0)}개 파싱 실패</span><span>{store.files.reduce((sum,file)=>sum+(file.duration??0),0).toFixed(0)} ms</span><span className="right">LOGSCOPE STUDIO / v0.6.0</span></footer>
+      <footer><span className="status-dot"/> {store.files.some(file=>file.status==='reading')?'파일을 분석하고 있습니다':'분석 준비 완료'}<span>{store.events.length.toLocaleString()} 이벤트</span><span>{store.files.reduce((sum,file)=>sum+file.warnings,0)}개 경고</span><span>{store.files.reduce((sum,file)=>sum+(file.failures??0),0)}개 파싱 실패</span><span>{store.files.reduce((sum,file)=>sum+(file.duration??0),0).toFixed(0)} ms</span><span className="right">LOGSCOPE STUDIO / v0.7.0</span></footer>
     </div>
   </div>;
 }

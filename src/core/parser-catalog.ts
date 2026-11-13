@@ -1,0 +1,2 @@
+export const parserNames:Record<string,string>={spring:'Spring Boot','java-pattern':'Logback / Log4j2',dotnet:'.NET ILogger',serilog:'Serilog Text',json:'JSON / Serilog JSON','serilog-json':'Serilog JSON',iis:'IIS W3C',generic:'Generic Text'};
+export const parserChoices=[{id:'auto',name:'자동 감지 (혼합 형식)'},...['spring','java-pattern','dotnet','serilog','json','iis','generic'].map(id=>({id,name:parserNames[id]}))];
