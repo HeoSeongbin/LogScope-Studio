@@ -1,6 +1,8 @@
 # LogScope Studio
 
-브라우저에서 로그를 읽고 탐색하는 React + TypeScript 워크스페이스입니다. 사용자 로그를 서버로 전송하거나 브라우저 저장소에 자동 저장하지 않습니다. **v0.9.0: 로컬 분석·내보내기와 Production 브라우저 회귀 게이트를 구현했습니다.** 검증 범위와 배포 상태는 아래 문서에 기록하며, 실기기·전체 접근성 적합성을 보장하지 않습니다.
+브라우저에서 로그를 읽고 탐색하는 React + TypeScript 워크스페이스입니다. 사용자 로그를 서버로 전송하거나 브라우저 저장소에 자동 저장하지 않습니다. **v0.9.0을 GitHub Pages에 배포했고 실제 분석·다운로드를 확인했습니다.** 실기기·전체 접근성 적합성을 보장하지 않으며 검증 범위와 한계를 문서에 구분합니다.
+
+[바로 사용하기](https://heoseongbin.github.io/LogScope-Studio/) · [성공한 배포/검증 실행](https://github.com/HeoSeongbin/LogScope-Studio/actions/runs/43370929769) · [기술적 해결 과정](docs/PORTFOLIO.md)
 
 ## 실행
 
@@ -151,7 +153,7 @@ npm run preview
 
 ## 배포 및 한계
 
-GitHub Actions 워크플로는 검사 후 Pages artifact를 생성하고 main에서 배포합니다. 상대 Vite base를 사용합니다. 원격 저장소는 [HeoSeongbin/LogScope-Studio](https://github.com/HeoSeongbin/LogScope-Studio)입니다. 저장소 Settings → Pages에서 GitHub Actions를 선택해야 합니다. 실제 배포와 배포 URL은 미검증입니다.
+GitHub Actions 워크플로는 검사 후 Pages artifact를 생성하고 main에서 배포합니다. 상대 Vite base를 사용합니다. 원격 저장소는 [HeoSeongbin/LogScope-Studio](https://github.com/HeoSeongbin/LogScope-Studio)입니다. 2026-11-13에 Pages를 GitHub Actions 방식으로 활성화했고 [실제 사이트](https://heoseongbin.github.io/LogScope-Studio/)를 확인했습니다. main f0aef30의 build·deploy·배포 후 Chromium 검증이 모두 성공했습니다. 문서/스크린샷 전용 변경은 앱을 재배포하지 않습니다.
 
 파일당 50 MiB·세션 원본 64 MiB, 파일별 200,000개·세션 250,000개 이벤트를 제한합니다. 한 줄 1 Mi 문자·레코드/병합 블록 2 Mi 문자, 파일별 추정 보관량 640 MiB·세션 768 MiB 한도를 적용합니다. 추정치는 실제 heap 상한이 아니며 복제·파생 집계·원본까지 포함한 RSS는 더 클 수 있습니다. 짧은 행이 많은 파일 등은 50 MiB보다 작아도 거절될 수 있습니다. 파싱은 전용 Worker 한 개씩 처리합니다. 일반 검색·필터·통계·추적과 결과 수신은 메인 스레드에 남아 있습니다. 목록은 고정 행 높이의 가상 스크롤 방식입니다. 전체 결과 중 현재 보이는 범위와 앞뒤 여유 행만 렌더링합니다.
 
@@ -193,13 +195,15 @@ HTML 리포트는 요약·범위/정책과 선택 데이터 전체를 정적 표
 
 브라우저 스모크 검증: 실제 파싱 Worker, 3개 이벤트의 JSON/CSV/HTML 다운로드, JSON·CSV 원문과 원본 줄 범위 대조, 테마/차트·너비·390px 페이지 넘침 확인. 전체 브라우저/스크린리더/키보드 순서·32 MiB 한계 다운로드는 미검증입니다.
 
-![Light 테마와 이벤트 상세](docs/screenshots/phase8-desktop-light.jpg)
+![실제 GitHub Pages Dashboard](docs/screenshots/phase9-live-dashboard.jpg)
+
+[실제 배포 차트](docs/screenshots/phase9-live-chart.jpg) · [Light 이벤트 상세](docs/screenshots/phase8-desktop-light.jpg)
 
 [모바일 Light](docs/screenshots/phase8-mobile-light.jpg) · [Light 차트](docs/screenshots/phase8-chart-light.jpg) · [Dark 차트](docs/screenshots/phase8-chart-dark.jpg)
 
 ## 검증과 포트폴리오 (Phase 9)
 
-Linux Actions에서 **193개 단위·통합 테스트와 32개 Production E2E**(Chromium/Firefox/WebKit/390px mobile Chromium)가 통과했습니다. 재시도/skip 없이 원문·진단·Worker·파일 수명·추적·통계·다운로드·취소·네트워크/저장소·양 테마의 axe 검사를 확인합니다. axe는 펼친 Explorer/파일 설정/상세/내보내기 화면의 WCAG 2/2.1 A/AA 규칙 자동 검사이며 전체 WCAG·스크린리더 적합성 인증이 아닙니다. WebKit은 실제 Safari/모바일 실기기와 구분합니다.
+main 배포 게이트까지 Linux Actions에서 **193개 단위·통합 테스트와 32개 Production E2E**(Chromium/Firefox/WebKit/390px mobile Chromium)가 통과했습니다. 재시도/skip 없이 원문·진단·Worker·파일 수명·추적·통계·다운로드·취소·네트워크/저장소·양 테마의 axe 검사를 확인합니다. axe는 펼친 Explorer/파일 설정/상세/내보내기 화면의 WCAG 2/2.1 A/AA 규칙 자동 검사이며 전체 WCAG·스크린리더 적합성 인증이 아닙니다. WebKit은 실제 Safari/모바일 실기기와 구분합니다.
 
 ```sh
 npm run build
@@ -211,3 +215,6 @@ npm run test:e2e:report
 Windows 앱 제어 정책으로 로컬 테스트 브라우저 시작이 차단된 기록과 Linux CI 통과를 구분했습니다. 정책을 우회하지 않습니다. 실제 32 MiB 내보내기 경계는 Node 단위 테스트로 검사하고, 브라우저 최대 크기 다운로드/저메모리 안정성은 미검증입니다.
 
 [배포·검증 가이드](docs/DEPLOYMENT.md) · [검증 이력](docs/TEST-CASES.md) · [기술적 해결 과정](docs/PORTFOLIO.md) · [아키텍처 다이어그램](docs/ARCHITECTURE.md) · [성능 측정](docs/PERFORMANCE.md)
+
+
+실제 배포 URL에서도 Chromium 회귀 1개를 추가 통과했습니다. IAB에서 오류 집중 가상 샘플 12개(오류 레벨 5개·미확인 시각 2개)의 차트와 JSON 다운로드를 확인하고 모든 rawText를 샘플의 원본 줄 범위와 대조했습니다. 배포 소스는 f0aef30이며 후속 문서 커밋과 구분합니다. 최종 기록은 [진행 기록](docs/PROGRESS.md)에 있습니다.

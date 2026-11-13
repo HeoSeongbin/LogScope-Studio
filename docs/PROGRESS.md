@@ -1,6 +1,7 @@
 # 개발 진행
 
-현재 Phase: **Phase 9 테스트 및 배포 — 자동 검증 통과, 실제 배포 확인 진행 중** (2026-11-13).
+현재 Phase: **Phase 9 테스트 및 배포 완료 — 정의된 자동 검증과 실제 Pages 동작 확인** (2026-11-13).
+다음 작업: 유지보수 및 아래 미완료 검증/확장 항목. 새 Phase를 임의로 추가하지 않는다.
 
 ## 시작 상태
 
@@ -35,7 +36,12 @@ AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 소스/Git을 비
 - 50 MiB 전달 포함: Windows 약 647ms/RSS 약 481 MiB, Linux CI 약 1,034ms/RSS 약 514 MiB. 단일 실행이며 SLA/FPS 보장 아님
 - 원시 측정: docs/benchmarks/phase9-local.json, phase9-ci.json. 이전 Phase 7 측정도 보존
 - GitHub Pages workflow 방식 활성화: API 201, 대상 https://heoseongbin.github.io/LogScope-Studio/
-- main 반영·실제 Pages 배포/배포 후 검증은 아직 진행 중이며 완료 처리하지 않음
+- 배포 소스: **f0aef30222c991365260933e776c38595c42b6c2**. main run **43370929769**의 build/deploy/verify-deployment 모두 성공
+- 실제 URL: **https://heoseongbin.github.io/LogScope-Studio/**
+- 배포 후 Chromium 1개 E2E 성공: v0.9.0·실제 업로드·두 Worker·원문 줄 범위/JSON 다운로드·저장소/외부 요청 검사
+- 실제 IAB 공개 사이트에서도 오류 집중 샘플 12개·ERROR/FATAL 5개·시각 미확인 2개, 실제 Canvas/JSON 다운로드 확인. 다운로드 12개 rawText를 원본 줄 범위와 전부 대조해 일치
+- 실제 배포 스크린샷: docs/screenshots/phase9-live-dashboard.jpg, phase9-live-chart.jpg. 관측한 브라우저 console error/warn 없음
+- 배포 후 문서/스크린샷 전용 커밋은 dist가 같으므로 새 앱 배포를 만들지 않음. 배포 소스와 문서 커밋을 구분
 
 ## 발견 및 해결한 문제 / 검증 이력
 
@@ -66,4 +72,4 @@ AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 소스/Git을 비
 
 ## 다음 작업
 
-검증한 소스를 main에 반영하고 Pages deploy/verify-deployment 결과와 실제 사이트를 확인한다. 확인 후 이 문서와 README의 배포 상태를 확정한다. 이후에는 유지보수·실기기/스크린리더·대표 실제 로그의 한계 검증을 별도 사용자 지시로 진행한다.
+계획된 Phase 9의 배포 완료 기준을 충족했다. 이후 유지보수·실기기/스크린리더·대표 실제 로그의 한계 검증 및 미지원 파서/인코딩/내보내기 확장은 별도 사용자 지시로 진행한다. 정의된 테스트 범위를 넘어 프로젝트의 모든 요구/모든 환경을 검증했다고 주장하지 않는다.

@@ -94,3 +94,5 @@ Linux run 43369744437 (a35c35e): **32/32 통과, skip/flaky/retry 없음**. stat
 최초 Linux 20/28, 다음 24/28, 확장 후 28/32 실패를 통해 대비/디코딩 안내/모바일 선택자 문제를 수정했고 오류를 skip하지 않았다. Windows 로컬 Playwright는 앱 제어 정책으로 시작이 차단됐다. 해당 환경의 실행 통과로 기록하지 않는다.
 
 미검증: 실기기/전체 스크린리더·WCAG 적합성/모든 파서 템플릿/최대 브라우저 다운로드·저메모리 장시간 세션/실제 롤백. 실제 Pages 결과는 PROGRESS.md에 별도 기록한다.
+
+최종 main f0aef30, run 43370929769: build·deploy·verify-deployment 모두 성공. Production 32개와 배포 URL Chromium 1개 검증 통과. 실제 IAB 공개 사이트에서 12개 샘플 이벤트/오류 5개/미확인 시각 2개·Canvas·JSON 다운로드를 확인하고 rawText를 원본 줄 slice와 대조했다. console error/warn 관측 없음. 화면 증거: screenshots/phase9-live-*.jpg. 문서 전용 후속 커밋은 앱 dist가 바뀌지 않는다.

@@ -1602,45 +1602,47 @@ public/samples/
 
 ## 30. 최종 완료 조건
 
-- [ ] 로그 파일 업로드
-- [ ] 다중 로그 파일 업로드
-- [ ] Spring Boot 로그 분석
-- [ ] Logback/Log4j2 로그 분석
-- [ ] ASP.NET 로그 분석
-- [ ] Serilog 로그 분석
-- [ ] IIS W3C 로그 분석
-- [ ] JSON Lines 분석
-- [ ] 로그 형식 감지
-- [ ] 공통 이벤트 정규화
-- [ ] 원본 파일 및 줄 번호 보존
-- [ ] ERROR/WARN/INFO/DEBUG/TRACE 필터
-- [ ] 키워드 검색
-- [ ] 정규식 검색
-- [ ] 시간 범위 검색
-- [ ] 로그 테이블
-- [ ] 이벤트 상세 화면
-- [ ] Java Stack Trace 그룹화
-- [ ] .NET Stack Trace 그룹화
-- [ ] Exception Fingerprint
-- [ ] 반복 오류 통계
-- [ ] 시간대별 로그 차트
-- [ ] 오류 집중 구간 분석
-- [ ] Request ID 추적
-- [ ] Trace ID 추적
-- [ ] 다중 서비스 타임라인
-- [ ] 파일별 타임존 처리
-- [ ] Web Worker 파싱
-- [ ] 대용량 파일 처리
-- [ ] CSV/JSON Export
-- [ ] Dark/Light 모드
-- [ ] 샘플 로그
-- [ ] 자동화 테스트
-- [ ] GitHub Pages 배포
-- [ ] PROJECT.md 관리
-- [ ] AGENTS.md 관리
-- [ ] README.md 최신화
-- [ ] PROGRESS.md 최신화
-- [ ] DECISIONS.md 기록
+v0.9.0(2026-11-13)의 현재 지원 패턴/자원 한도와 자동·배포 스모크 검증 범위에서 확인한 항목이다. 모든 로그 템플릿/실기기/전체 접근성 적합성을 뜻하지 않는다. 원래의 상세 요구사항을 축소하지 않으며 미지원·미검증 확장 항목은 README.md와 docs/PROGRESS.md에 별도로 유지한다.
+
+- [x] 로그 파일 업로드
+- [x] 다중 로그 파일 업로드
+- [x] Spring Boot 로그 분석
+- [x] Logback/Log4j2 로그 분석
+- [x] ASP.NET 로그 분석
+- [x] Serilog 로그 분석
+- [x] IIS W3C 로그 분석
+- [x] JSON Lines 분석
+- [x] 로그 형식 감지
+- [x] 공통 이벤트 정규화
+- [x] 원본 파일 및 줄 번호 보존
+- [x] ERROR/WARN/INFO/DEBUG/TRACE 필터
+- [x] 키워드 검색
+- [x] 정규식 검색
+- [x] 시간 범위 검색
+- [x] 로그 테이블
+- [x] 이벤트 상세 화면
+- [x] Java Stack Trace 그룹화
+- [x] .NET Stack Trace 그룹화
+- [x] Exception Fingerprint
+- [x] 반복 오류 통계
+- [x] 시간대별 로그 차트
+- [x] 오류 집중 구간 분석
+- [x] Request ID 추적
+- [x] Trace ID 추적
+- [x] 다중 서비스 타임라인
+- [x] 파일별 타임존 처리
+- [x] Web Worker 파싱
+- [x] 대용량 파일 처리
+- [x] CSV/JSON Export
+- [x] Dark/Light 모드
+- [x] 샘플 로그
+- [x] 자동화 테스트
+- [x] GitHub Pages 배포
+- [x] PROJECT.md 관리
+- [x] AGENTS.md 관리
+- [x] README.md 최신화
+- [x] PROGRESS.md 최신화
+- [x] DECISIONS.md 기록
 
 ---
 

@@ -1,6 +1,6 @@
 # 검증과 GitHub Pages 운영
 
-대상 저장소: HeoSeongbin/LogScope-Studio. Pages는 2026-11-13에 workflow 방식으로 활성화했다. 대상 URL은 https://heoseongbin.github.io/LogScope-Studio/ 이며 실제 배포/확인 결과는 PROGRESS.md를 기준으로 한다.
+대상 저장소: HeoSeongbin/LogScope-Studio. Pages는 2026-11-13에 workflow 방식으로 활성화했다. 대상 URL은 https://heoseongbin.github.io/LogScope-Studio/ 이며 main f0aef30의 run 43370929769에서 build/deploy/verify-deployment가 모두 성공했다. 실제 공개 사이트의 v0.9.0 분석·JSON 다운로드와 원문 보존도 확인했다. 상세 결과는 PROGRESS.md를 기준으로 한다.
 
 ## 로컬 검사
 

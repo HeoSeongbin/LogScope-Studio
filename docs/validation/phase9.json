@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-13",
+  "version": "0.9.0",
+  "deployedSource": "f0aef30222c991365260933e776c38595c42b6c2",
+  "url": "https://heoseongbin.github.io/LogScope-Studio/",
+  "run": "https://github.com/HeoSeongbin/LogScope-Studio/actions/runs/43370929769",
+  "jobs": {
+    "build": "success",
+    "deploy": "success",
+    "verify-deployment": "success"
+  },
+  "unitIntegrationTests": 193,
+  "productionE2E": {
+    "passed": 32,
+    "skipped": 0,
+    "flaky": 0,
+    "retries": 0,
+    "projects": [
+      "chromium",
+      "firefox",
+      "webkit",
+      "mobile-chromium"
+    ]
+  },
+  "deployedChromiumE2E": {
+    "passed": 1
+  },
+  "manualLiveSample": {
+    "name": "statistics-demo.jsonl",
+    "events": 12,
+    "errorPlusFatal": 5,
+    "untimed": 2,
+    "downloadedJSONOriginalSlicesMatch": true,
+    "observedConsoleErrorsWarnings": 0
+  },
+  "limitations": [
+    "Windows Playwright blocked by application control policy; Linux results are separate",
+    "Browser emulation does not establish mobile device/Safari product compatibility",
+    "Automated axe checks do not establish complete WCAG/screen reader conformance",
+    "Browser maximum-size download/low-memory long sessions and real rollback remain unverified"
+  ]
+}
