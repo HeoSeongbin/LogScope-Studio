@@ -1,5 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
-const remote=process.env.E2E_BASE_URL;
+const remote=process.env.E2E_BASE_URL?.replace(/\/?$/,'/');
 export default defineConfig({
   testDir:'./e2e',fullyParallel:true,forbidOnly:!!process.env.CI,retries:0,workers:2,
   timeout:60000,expect:{timeout:15000},globalTimeout:10*60*1000,

@@ -8,7 +8,21 @@ if(!token){
   token=result.stdout?.split('\n').find(line=>line.startsWith('password='))?.slice(9).trim();
 }
 const headers={Accept:'application/vnd.github+json','User-Agent':'LogScope-CI-verification',...(token?{Authorization:'Bearer '+token}:{})};
+async function main(){
 const mode=process.argv[2]??'branch',id=process.argv[3];
+if(mode==='watch'||mode==='watch-main'){
+  const expected=spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim();let previous='';
+  const branch=mode==='watch-main'?'main':'codex%2Fphase9-validation';
+  for(let attempt=0;attempt<40;attempt++){
+    const response=await fetch(`${repo}/actions/runs?branch=${branch}&per_page=5`,{headers});if(!response.ok)throw new Error(`CI status HTTP ${response.status}`);
+    const data=await response.json();const run=data.workflow_runs?.find(run=>run.head_sha===expected);
+    const state=JSON.stringify(run?{id:run.id,sha:run.head_sha,status:run.status,conclusion:run.conclusion,url:run.html_url}:{waitingForSha:expected});if(state!==previous){console.log(state);previous=state;}
+    if(run?.status==='completed'){process.exitCode=run.conclusion==='success'?0:1;break;}
+    if(attempt===39)throw new Error('CI verification exceeded 10 minutes');
+    await new Promise(resolve=>setTimeout(resolve,15000));
+  }
+  return;
+}
 if(id&&!/^\d+$/.test(id))throw new Error('A numeric run/job ID is required');
 if(mode==='report'){
   mkdirSync('test-results',{recursive:true});
@@ -22,7 +36,7 @@ if(mode==='report'){
     if(artifact.name!=='validation-results')continue;const archive=await fetch(`${repo}/actions/artifacts/${artifact.id}/zip`,{headers});
     if(archive.ok){const path=`test-results/ci-${artifact.id}.zip`;writeFileSync(path,new Uint8Array(await archive.arrayBuffer()));console.log(path);}
   }
-  process.exit(0);
+  return;
 }
 const endpoint=mode==='artifact'?`/actions/artifacts/${id}/zip`:mode==='jobs'?`/actions/runs/${id}/jobs`:mode==='logs'?`/actions/jobs/${id}/logs`:mode==='main'?'/actions/runs?branch=main&per_page=1':'/actions/runs?branch=codex%2Fphase9-validation&per_page=1';
 const response=await fetch(repo+endpoint,{headers});
@@ -30,3 +44,6 @@ if(!response.ok){console.log(JSON.stringify({status:response.status}));process.e
 else if(mode==='artifact'){mkdirSync('test-results',{recursive:true});const path=`test-results/ci-${id}.zip`;writeFileSync(path,new Uint8Array(await response.arrayBuffer()));console.log(path);}
 else if(mode==='logs'){const text=await response.text();mkdirSync('test-results',{recursive:true});writeFileSync(`test-results/ci-job-${id}.log`,text);console.log(text.split('\n').slice(-120).join('\n'));}
 else{const data=await response.json();console.log(JSON.stringify(mode==='jobs'?data.jobs?.map(job=>({id:job.id,name:job.name,status:job.status,conclusion:job.conclusion,steps:job.steps?.map(step=>({name:step.name,conclusion:step.conclusion}))})):data.workflow_runs?.map(run=>({id:run.id,sha:run.head_sha,status:run.status,conclusion:run.conclusion,url:run.html_url})),null,2));}
+
+}
+await main();

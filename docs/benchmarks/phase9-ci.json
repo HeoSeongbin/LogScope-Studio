@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-13T05:08:25.161Z",
+  "method": "Production parsing worker in Node worker_threads; synthetic Spring lines ~1 KiB; one run per size in a fresh process. RSS includes fixture, main, worker and message cloning. Heartbeat is 10ms, not browser FPS.",
+  "results": [
+    {
+      "requestedMiB": 1,
+      "bytes": 1048575,
+      "events": 1023,
+      "expectedEvents": 1023,
+      "parserMs": 24.25839599999999,
+      "elapsedMs": 78.38440200000001,
+      "maxMainHeartbeatGapMs": 10.528989000000003,
+      "peakProcessRssBytes": 94793728,
+      "estimatedRetainedBytes": 11412588,
+      "failures": 0,
+      "node": "v24.22.2",
+      "platform": "linux",
+      "arch": "x64",
+      "cpu": "AMD EPYC 9V74 80-Core Processor"
+    },
+    {
+      "requestedMiB": 10,
+      "bytes": 10485750,
+      "events": 10230,
+      "expectedEvents": 10230,
+      "parserMs": 149.74843900000002,
+      "elapsedMs": 264.57723200000004,
+      "maxMainHeartbeatGapMs": 43.015548999999965,
+      "peakProcessRssBytes": 192974848,
+      "estimatedRetainedBytes": 114125880,
+      "failures": 0,
+      "node": "v24.22.2",
+      "platform": "linux",
+      "arch": "x64",
+      "cpu": "AMD EPYC 9V74 80-Core Processor"
+    },
+    {
+      "requestedMiB": 50,
+      "bytes": 52428750,
+      "events": 51150,
+      "expectedEvents": 51150,
+      "parserMs": 672.26534,
+      "elapsedMs": 1033.510698,
+      "maxMainHeartbeatGapMs": 188.17784500000005,
+      "peakProcessRssBytes": 538894336,
+      "estimatedRetainedBytes": 570629400,
+      "failures": 0,
+      "node": "v24.22.2",
+      "platform": "linux",
+      "arch": "x64",
+      "cpu": "AMD EPYC 9V74 80-Core Processor"
+    }
+  ]
+}

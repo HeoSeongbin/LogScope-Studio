@@ -1,6 +1,6 @@
 # LogScope Studio
 
-브라우저에서 로그를 읽고 탐색하는 React + TypeScript 워크스페이스입니다. 사용자 로그를 서버로 전송하거나 브라우저 저장소에 자동 저장하지 않습니다. **Phase 8 UI/UX·로컬 내보내기까지 구현했으며 자동 검증을 통과했습니다.** 실제 브라우저 기본 동작을 확인했으며, 전체 E2E·호환성·배포 검증은 별도 미완료 항목입니다.
+브라우저에서 로그를 읽고 탐색하는 React + TypeScript 워크스페이스입니다. 사용자 로그를 서버로 전송하거나 브라우저 저장소에 자동 저장하지 않습니다. **v0.9.0: 로컬 분석·내보내기와 Production 브라우저 회귀 게이트를 구현했습니다.** 검증 범위와 배포 상태는 아래 문서에 기록하며, 실기기·전체 접근성 적합성을 보장하지 않습니다.
 
 ## 실행
 
@@ -38,7 +38,7 @@ npm run dev
 
 검색식 최대 256자, 일반 키워드 최대 16개입니다. 정규식은 이벤트별 검색 필드 합 128 Ki 문자·전체 16 Mi 문자 제한이며 초과 시 오류를 표시합니다. Worker 부팅은 5초, 준비 후 전달·실행·응답은 1초 watchdog으로 제한합니다. 느린 기기에서는 유효한 검색도 중단될 수 있습니다. 강조는 필드별 최대 100구간·정규식 전체 20,000구간이며 일치 결과 건수는 자르지 않습니다.
 
-검색 초기화는 검색/기간/Logger/Thread/정렬만 초기화하고 기존 레벨·파일 필터는 유지합니다. 세션 초기화는 파일·원본·분석 결과·모든 조건을 제거합니다. 실제 브라우저 Worker/레이아웃 E2E는 미검증이며 Node Worker와 jsdom 테스트 통과와 구분합니다.
+검색 초기화는 검색/기간/Logger/Thread/정렬만 초기화하고 기존 레벨·파일 필터는 유지합니다. 세션 초기화는 파일·원본·분석 결과·모든 조건을 제거합니다. Production 하위 경로에서 실제 브라우저 Worker/다운로드 E2E를 수행하며 전체 호환성/실기기 검증과 구분합니다.
 
 ## Stack Trace 및 예외 분석 (Phase 4)
 
@@ -147,7 +147,7 @@ npm run build
 npm run preview
 ```
 
-타입 검사·ESLint·테스트 192개·프로덕션 빌드 통과. 기존 115개 회귀와 파일별 시간대·명시적 ID·타입/범위 분리·교차 파일 추적·설정 수명주기 테스트를 포함합니다. 기존 임시 비병합 기대 2건은 Phase 4 병합 및 원본 보존을 확인하도록 변경했습니다. UI 검증은 React Testing Library/jsdom에서 수행했으며 실제 브라우저 E2E와 구분합니다. 결과는 [진행 기록](docs/PROGRESS.md)에 있습니다.
+타입 검사·ESLint·테스트 193개·프로덕션 빌드 통과. 기존 115개 회귀와 파일별 시간대·명시적 ID·타입/범위 분리·교차 파일 추적·설정 수명주기 테스트를 포함합니다. 기존 임시 비병합 기대 2건은 Phase 4 병합 및 원본 보존을 확인하도록 변경했습니다. UI 검증은 React Testing Library/jsdom에서 수행했으며 실제 브라우저 E2E와 구분합니다. 결과는 [진행 기록](docs/PROGRESS.md)에 있습니다.
 
 ## 배포 및 한계
 
@@ -157,7 +157,7 @@ GitHub Actions 워크플로는 검사 후 Pages artifact를 생성하고 main에
 
 텍스트 Stack Trace는 지원 문법의 연속 구간만 병합합니다. 임의의 메시지 연속 행·지역화 종료 표식·일부 AggregateException 출력은 보수적으로 별도 원문/진단으로 남깁니다. 중첩은 16단계·128노드까지만 정규화하며 초과 원문은 보존합니다. 깨진 다중 행 JSON은 행 단위로 복구하며 구조를 임의 복원하지 않습니다. Unix timestamp 숫자 단위와 레거시 인코딩 수동 선택은 지원하지 않습니다. PDF/ZIP 내보내기는 지원하지 않습니다. traceparent 헤더 자체의 분해·Span parent 트리·임의 UUID의 ID 추론은 지원하지 않습니다. 실제 브라우저에서 두 테마의 Canvas 페인팅과 390px 배치를 확인했습니다. 전체 브라우저 호환성·반응형 E2E·스크린리더 검증은 미완료입니다.
 
-Chart.js 4.6.1 / react-chartjs-2 5.3.1 및 @js-temporal/polyfill 0.5.1을 사용합니다. 설치 시 npm은 moderate 10건을 보고했습니다. 파서·Temporal을 파싱 Worker로 분리해 메인 chunk 약 473 kB, Worker 약 189 kB로 빌드됩니다. 다음은 **Phase 9 테스트 및 배포**입니다.
+Chart.js 4.6.1 / react-chartjs-2 5.3.1 및 @js-temporal/polyfill 0.5.1을 사용합니다. Phase 9 npm 감사에서 런타임 취약점은 0건이며, 개발 도구의 minimatch 경로에 moderate 10건이 남았습니다. 파서·Temporal을 파싱 Worker로 분리했으며 v0.9.0은 메인 chunk 약 488 kB, Worker 약 190 kB로 빌드됩니다. Production 경로 회귀·배포 점검과 검증의 한계는 [배포 가이드](docs/DEPLOYMENT.md)에 있습니다.
 
 ## 성능 및 취소 (Phase 7)
 
@@ -197,6 +197,17 @@ HTML 리포트는 요약·범위/정책과 선택 데이터 전체를 정적 표
 
 [모바일 Light](docs/screenshots/phase8-mobile-light.jpg) · [Light 차트](docs/screenshots/phase8-chart-light.jpg) · [Dark 차트](docs/screenshots/phase8-chart-dark.jpg)
 
-## Phase 9 검증 작업 (진행 중)
+## 검증과 포트폴리오 (Phase 9)
 
-`npm run build` 뒤 `npx playwright install --with-deps chromium firefox webkit`, `npm run test:e2e`로 Production 하위 경로 회귀를 실행합니다. `npm run test:e2e:report`로 보고서를 열 수 있습니다. 배포 URL 검증은 E2E_BASE_URL 환경 변수를 사용합니다. 결과가 확정되기 전에는 Phase 9/실제 배포를 완료로 표시하지 않습니다.
+Linux Actions에서 **193개 단위·통합 테스트와 32개 Production E2E**(Chromium/Firefox/WebKit/390px mobile Chromium)가 통과했습니다. 재시도/skip 없이 원문·진단·Worker·파일 수명·추적·통계·다운로드·취소·네트워크/저장소·양 테마의 axe 검사를 확인합니다. axe는 펼친 Explorer/파일 설정/상세/내보내기 화면의 WCAG 2/2.1 A/AA 규칙 자동 검사이며 전체 WCAG·스크린리더 적합성 인증이 아닙니다. WebKit은 실제 Safari/모바일 실기기와 구분합니다.
+
+```sh
+npm run build
+npx playwright install --with-deps chromium firefox webkit
+npm run test:e2e
+npm run test:e2e:report
+```
+
+Windows 앱 제어 정책으로 로컬 테스트 브라우저 시작이 차단된 기록과 Linux CI 통과를 구분했습니다. 정책을 우회하지 않습니다. 실제 32 MiB 내보내기 경계는 Node 단위 테스트로 검사하고, 브라우저 최대 크기 다운로드/저메모리 안정성은 미검증입니다.
+
+[배포·검증 가이드](docs/DEPLOYMENT.md) · [검증 이력](docs/TEST-CASES.md) · [기술적 해결 과정](docs/PORTFOLIO.md) · [아키텍처 다이어그램](docs/ARCHITECTURE.md) · [성능 측정](docs/PERFORMANCE.md)

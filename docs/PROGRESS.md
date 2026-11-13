@@ -1,71 +1,69 @@
 # 개발 진행
 
-현재 Phase: **Phase 9 테스트 및 배포 진행 중** (2026-11-13).
+현재 Phase: **Phase 9 테스트 및 배포 — 자동 검증 통과, 실제 배포 확인 진행 중** (2026-11-13).
 
-Phase 9 진행: Production 하위 경로 E2E 7종×4 프로젝트와 axe/CI 게이트를 추가했다. 로컬 Chromium·Firefox는 테스트 본문 실행 전 spawn UNKNOWN으로 실패했고 완료 처리하지 않는다. GitHub Pages는 비활성 상태이며 최근 Actions는 build 성공/deploy 실패였다. 검증 브랜치의 Linux CI에서 실행 결과를 확인한 뒤 main 배포를 진행한다. 첫 Linux E2E는 20/28 통과였다. Dark 보조 텍스트 대비·브라우저별 디코딩 진단을 수정했고 모바일 실패는 숨긴 장식 번호를 포함한 테스트 선택자를 안정화했다. 두 번째 Linux E2E는 24/28 통과로 기능 실패가 해소됐고 Light 테마의 활성 메뉴/hover 대비만 남아 수정했다. 추가로 Worker 준비 전 취소/초기화 E2E와 실제 32 MiB 출력 경계 단위 검증을 보강했다. 세 번째 Linux 실행은 28/32 통과(취소 4종 포함)이며 확장 검사에서 선택 파일 상태 텍스트 대비가 추가 발견돼 수정했다. 재검증 전에는 완료 처리하지 않는다. 아래는 Phase 8까지의 확정 기록이다.
-다음 Phase: **Phase 9 테스트 및 배포**. 전체 E2E·브라우저 호환성·접근성 적합성·실제 Pages 배포는 미완료다.
+## 시작 상태
 
-## 시작 상태와 범위
+AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 소스/Git을 비교했다. Phase 8 구현과 기록이 일치했고 main a5e0d56은 origin/main보다 로컬 Phase 7/8 커밋 2개 앞섰으며 작업 트리는 깨끗했다. 기존 18개 파일·192개 테스트를 유지하고 Phase 9 범위에서 브라우저 회귀/배포와 발견된 오류만 수정했다.
 
-AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 소스/Git을 확인했다. Phase 7 구현이 기록과 일치했고 기존 15개 파일·162개 테스트가 통과했다. main은 99604bf이며 origin/main보다 로컬 커밋 1개 앞섰고 작업 트리는 깨끗했다. 이번에는 Phase 8만 구현했으며 커밋/푸시는 수행하지 않았다.
+원격 기존 run 43161823822는 build 성공/deploy 실패였고 Pages는 비활성이었다. Git 인증으로 해당 저장소만 읽고, 검증 브랜치 codex/phase9-validation에서 CI를 실행했다. 테스트에는 공개 가상 로그만 사용한다.
 
 ## 구현 내용
 
-- Dark/Light CSS 팔레트와 실제 Chart.js 축/범례 전환. 테마/너비는 메모리 상태만 사용
-- 상세 패널 260~560px 네이티브 range 조절·초기화, 좁은 화면 단일 열·모바일 메뉴 가로 스크롤
-- 본문 skip link, nav/region 라벨, 초점 표시, 진행/취소 알림, 가상 목록 방향키/Page/Home/End와 모바일 끝 행 이동
-- 파일 파싱 단계 한국어 안내 및 자원/Worker/인코딩 오류별 복구 방법. 원래 진단은 유지
-- 현재 필터/전체 세션 이벤트, 예외 그룹 전체/선택 예외, 선택 typed-scoped ID 관측 타임라인, 요약/UTC 시간대별 통계 내보내기
-- JSON metadata/rows, CSV BOM·CRLF·고정 컬럼·수식 위험 접두사 방어, 정적 HTML 요약·데이터 리포트
-- 원문/행/파싱 실패/필드 부재·null 시각·예외 트리·파일 설정 근거 보존. 로그에 없는 시각·ID·원인을 만들지 않음
-- 이벤트 50,000개 / 결과 UTF-8 32 MiB 보호, 생성 행 진행률·취소, 변경/제거/초기화 후 늦은 다운로드 차단
-- 민감 정보 경고, HTML 텍스트 이스케이프/CSP, 임시 anchor와 object URL 정리. 서버 전송/자동 영구 저장 없음
-- README·아키텍처·테스트 기록·ADR-026~028 및 실제 가상 샘플 스크린샷 4장
+- Playwright 1.65.0 / axe-core/playwright 4.14.0을 개발 의존성에 추가. 제품 번들에 포함하지 않음
+- 실제 dist를 /LogScope-Studio/에서 제공하는 정적 검증 서버. 없는 자산은 404로 반환
+- Chromium/Firefox/WebKit/mobile Chromium(390px) 4개 프로젝트 × 8개 시나리오
+- 업로드·파싱/정규식 Worker·원문 위치/JSON 재사용·혼합 JSON/IIS 진단·재분석/삭제/초기화·파일 시간대/교차 추적·버킷 통계·CSV/HTML·손상 디코딩·취소·반응형·양 테마 axe 검사
+- 외부 HTTP 요청/로그 POST/브라우저 오류와 local/session storage 쓰기 부재 확인
+- 실제 기본 32 MiB 출력 경계 Node 단위 테스트. UTF-8/UTF-16 손상 진단도 안정적 코드로 강화
+- TEXT_DECODE에 인코딩·원래 예외 메시지/cause 보존. 브라우저별 메시지 차이에도 같은 복구 안내
+- Dark/Light 보조 텍스트·활성 메뉴·hover·선택 파일 상태 대비 수정. 숨긴 장식 번호와 무관한 모바일 메뉴 테스트
+- main/codex/PR CI 게이트, 실패 trace/report 7일 보관, main만 Pages 배포, 배포 후 실제 URL Chromium 검증
+- 문서/스크린샷 전용 변경은 앱 dist가 같으므로 재배포 생략
+- 아키텍처/CI Mermaid, 배포 가이드·포트폴리오 기술 설명·성능 기록 추가
 
-## 실제 검증 결과 (2026-11-13)
+## 실제 검증 결과
 
-- npm run typecheck: 통과
-- npm run lint: 통과
-- npm test: 18개 파일·192개 테스트 통과 (기존 162개 회귀 포함)
-- npm run build: 통과. 메인 약 488 kB / gzip 159 kB, 파싱 Worker 약 189 kB, CSS 약 42.5 kB
-- JSON round trip/Unicode·CRLF·null·위치·파싱 실패, CSV quote/BOM/수식 접두사/중첩 값, HTML escape/CSP 검증
-- 실제 예외 그룹/선택 예외·추적 정렬/미확인 시각·UTC 버킷/빈 통계·한도 초과 전체 실패 검증
-- 바이트 한도의 UTF-8 계산, 시작 전/행 배치 사이 취소, stale scope/언마운트, URL 정리 검증
-- jsdom: 필터/전체 구분, 무효 필터 차단, 선택 예외/추적/통계 연결, 테마/너비·키보드 가상 목록 마지막 행 검증
-- 실제 IAB 브라우저 개발 서버: spring-exception.log → 3개 이벤트, 첫 원문 줄 1~9/다음 10~18/마지막 19 확인
-- 실제 JSON/CSV/HTML 파일 다운로드 성공. 다운로드 JSON의 rawText 전체를 샘플 원본 줄 slice와 대조하고 CSV 3개 이벤트의 rawText가 JSON과 같음을 확인. HTML 11,472바이트, 스크립트 태그 없음/CSP 포함 확인
-- 실제 Dark/Light Canvas 렌더링, 키보드 End로 상세 너비 560px 및 초기화 320px, 원문 상세 확인
-- 실제 390×844 viewport: 페이지 가로 넘침 없음(body scrollWidth 375, viewport 390), 상세 단일 열. 메뉴 가로 스크롤·활성 화면 노출 확인
-- 브라우저 콘솔 error/warn 관측 없음. 화면 증거는 docs/screenshots/phase8-*.jpg
+- npm run typecheck / npm run lint / npm test / npm run build: 통과
+- Vitest: **18개 파일·193개 테스트 통과**
+- Linux CI a35c35e, run **43369744437**: 모든 build 게이트 성공
+- Production E2E: **32/32 통과, skip 0·재시도 0·flaky 0**, 약 35초. 각 프로젝트 8개 시나리오
+- axe WCAG 2/2.1 A/AA 태그: 펼친 Explorer/파일 설정/상세/내보내기 화면, 양 테마에서 위반 0. 전체 접근성 적합성 감사와 구분
+- 런타임 npm audit: **0건**. 전체 audit는 개발용 minimatch 경로의 moderate 10건, high/critical 0
+- Production: 메인 약 488 kB/gzip 159 kB, 파싱 Worker 약 190 kB, CSS 약 43 kB
+- 1/10/50 MiB 성능 회귀: 로컬 Windows와 Linux CI 모두 1,023/10,230/51,150개 이벤트, 누락/파싱 실패 0
+- 50 MiB 전달 포함: Windows 약 647ms/RSS 약 481 MiB, Linux CI 약 1,034ms/RSS 약 514 MiB. 단일 실행이며 SLA/FPS 보장 아님
+- 원시 측정: docs/benchmarks/phase9-local.json, phase9-ci.json. 이전 Phase 7 측정도 보존
+- GitHub Pages workflow 방식 활성화: API 201, 대상 https://heoseongbin.github.io/LogScope-Studio/
+- main 반영·실제 Pages 배포/배포 후 검증은 아직 진행 중이며 완료 처리하지 않음
 
-## 발견 및 해결한 문제
+## 발견 및 해결한 문제 / 검증 이력
 
-- 무효/대기 필터 결과를 전체 결과로 내보낼 위험 → 대상별 ready/disabled와 명시적 전체 세션 선택
-- 범위 변경 후 이전 파일이 다운로드될 위험 → revision/AbortController로 취소
-- CSV 원문이 수식으로 해석될 위험 → quote·위험 접두사 방어, 원본 무변경과 JSON 재사용 안내
-- HTML 리포트가 로그를 실행할 위험 → 모든 동적 값 escape 및 외부 리소스/스크립트 차단 CSP
-- 모바일 활성 nav가 기존 CSS에서 숨겨질 수 있음 → 가로 메뉴에서 활성 상태도 표시
-- 모바일 End 키의 고정 높이 계산이 마지막 행을 가릴 수 있음 → 실제 viewport 높이 반영
-- 첫 샌드박스 개발 서버는 소켓 접근 차단/브라우저 timeout → 허용된 로컬 개발 서버 실행 후 실제 검증. 이 접속 실패를 파싱 성공으로 처리하지 않음
+- Windows 앱 제어 정책이 새 테스트 브라우저를 차단 → 보안 설정을 우회하지 않고 로컬 실패와 Linux 검증을 구분
+- 첫 Linux 실행 20/28 → Dark 작은 텍스트 대비·Firefox/WebKit 디코딩 복구 안내·모바일 테스트의 장식 번호 의존을 수정
+- 두 번째 24/28 → Light 활성 메뉴/hover 대비 수정
+- 취소/상세 화면까지 확장한 세 번째 28/32 → 선택 파일 상태 대비 수정
+- 네 번째 32/32 및 성능 게이트 성공 → 실패를 skip/재시도로 숨기지 않음
+- 기존 배포 실패 → Pages 비활성 확인 후 workflow 방식 활성화, 실제 배포 후 확인을 별도 job으로 추가
 
 ## 알려진 제약 / 미완료
 
-- 브라우저 확인은 단일 IAB 환경·가상 샘플·개발 서버 스모크다. Production 배포/Firefox/Safari/모바일 실기기/전체 E2E는 미검증
-- 전체 키보드 탭 순서·스크린리더·색 대비/WCAG 적합성 감사는 미완료. 단위 테스트/390px 화면 확인과 구분
-- CSV null/누락/빈 문자열 구분 불가, 수식 방어 접두사가 값에 추가됨. 스프레드시트 재저장/환경별 수식 안전성은 보장하지 않음
-- HTML은 다운로드·문자열/CSP 확인을 했으며 모든 리포트 크기·브라우저의 열람/인쇄 호환성은 미검증. PDF/ZIP 및 원본 파일 바이트 Export 미지원
-- 큰 입력의 데이터 준비/단일 레코드 직렬화·필터/집계/추적은 메인 스레드. 취소는 다음 확인 지점에서 적용되며 완전 무정지 보장 없음
-- 자동 마스킹 없음. 다운로드에는 원문·파일명·식별자·검색식·설정이 들어갈 수 있음
-- 32 MiB 경계는 자동 테스트의 낮춘 바이트 한도로 검증했으며 실제 브라우저 최대 크기 다운로드/저메모리 안정성 실측은 미완료
-- Phase 7 벤치마크와 입력/메모리 한도는 PERFORMANCE.md 참조. 이전 npm moderate 10건 보고는 상세 재감사 미실행
+- 로컬 Windows Playwright 실행은 앱 제어 정책으로 미검증. Linux 브라우저 엔진 검증을 Windows 실행 통과로 표현하지 않음
+- Mobile은 에뮬레이션이며 iOS/Android 실기기·Safari 제품·스크린리더·전체 탭 순서·모든 화면/입력 상태의 WCAG 감사는 미완료
+- 실제 브라우저 50 MiB/32 MiB 최대 다운로드·저메모리 장시간 세션은 미검증. 32 MiB 경계는 실제 Node 직렬화로 확인
+- 필터/집계/추적/내보내기 일부는 메인 스레드이며 결과 전달 지연/임시 복제/GC 비용이 남음
+- CSV 접두사·null 표현 손실/스프레드시트 재저장 안전성, 자동 마스킹 부재, 파서 지원 템플릿·레거시 인코딩/PDF/ZIP 한계는 README 참조
+- 개발 도구의 moderate 10건은 호환성 없는 강제 다운그레이드/override 없이 남김
+- 실제 롤백 재배포는 미실행. 문서의 복구 절차와 검증된 동작을 구분
 
 ## 주요 변경 파일
 
-- 내보내기/피드백: src/core/export.ts, download.ts, feedback.ts, src/app/ExportControls.tsx
-- UI: src/stores/ui.ts, src/style.css, App.tsx, FileParserSettings.tsx, VirtualLogTable.tsx, TraceExplorer.tsx, StatisticsDashboard.tsx, StatisticsCharts.tsx
-- 테스트: export.test.ts, export-ui.test.tsx, download.test.ts, statistics-ui.test.tsx
-- 문서/버전: README.md, PROGRESS.md, DECISIONS.md, ARCHITECTURE.md, TEST-CASES.md, docs/screenshots/*, package.json/package-lock.json → 0.8.0
+- e2e/workspace.spec.ts, playwright.config.ts, tsconfig.e2e.json, scripts/serve-build.mjs, ci-status.mjs
+- .github/workflows/pages.yml, vite.config.ts, eslint.config.js, .gitignore, package.json/package-lock.json (0.9.0)
+- src/core/parsing/stream-reader.ts, src/style.css, src/app/App.tsx, src/tests/streaming.test.ts, export.test.ts
+- scripts/benchmark.mjs, docs/benchmarks/phase9-*.json
+- README.md, PROGRESS.md, DECISIONS.md, ARCHITECTURE.md, TEST-CASES.md, PERFORMANCE.md, DEPLOYMENT.md, PORTFOLIO.md
 
 ## 다음 작업
 
-Phase 9: 브라우저 E2E·배포 경로/Worker/다운로드·접근성·한계 입력 회귀를 보강하고 CI/실제 GitHub Pages 배포를 검증한다. 사용자 지시 후 진행한다. 미검증 항목을 프로젝트 전체 완료로 처리하지 않는다.
+검증한 소스를 main에 반영하고 Pages deploy/verify-deployment 결과와 실제 사이트를 확인한다. 확인 후 이 문서와 README의 배포 상태를 확정한다. 이후에는 유지보수·실기기/스크린리더·대표 실제 로그의 한계 검증을 별도 사용자 지시로 진행한다.

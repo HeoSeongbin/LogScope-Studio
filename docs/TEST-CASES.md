@@ -82,3 +82,15 @@ export-ui.test.tsx/statistics-ui.test.tsx는 실제 필터/전체/선택 예외/
 실제 IAB/로컬 개발 서버에서 Spring 반복 예외 샘플을 Worker로 분석해 3개 이벤트를 확인했다. JSON/CSV/HTML 파일을 실제 다운로드하고 JSON rawText를 원본 줄 범위와, CSV rawText를 JSON과 비교했다. HTML은 11,472바이트이며 CSP와 스크립트 부재 확인. 두 테마의 실제 Canvas, 패널 키보드 560px/초기화 320px, 390×844 화면의 페이지 가로 넘침 부재와 상세 단일 열을 확인했다. 스크린샷: docs/screenshots/phase8-*.jpg. 콘솔 error/warn 관측 없음.
 
 미검증: 전체 E2E/브라우저 호환성/모바일 실기기/스크린리더·대비 적합성/HTML 리포트 인쇄·열람 호환성/32 MiB 실제 브라우저 다운로드·저메모리/Pages 배포. 이 항목은 Phase 9에서 보강한다. 스모크 결과만으로 전체 완료를 주장하지 않는다.
+
+## Phase 9 Production 회귀 (2026-11-13)
+
+타입 검사(제품+E2E), ESLint, 18개 파일·193개 Vitest, Production Build 통과. 기본 32 MiB 실제 출력 경계와 안정적 TEXT_DECODE 진단을 추가했다. Playwright 1.65.0/axe 4.14.0을 사용해 Chromium/Firefox/WebKit/390px mobile Chromium의 8개 시나리오를 실행했다.
+
+Linux run 43369744437 (a35c35e): **32/32 통과, skip/flaky/retry 없음**. static dist /LogScope-Studio/에서 파일 업로드·실제 두 Worker·예외 원문 위치·복구 가능한 JSON/IIS 오류·파일 설정/제거·교차 추적/UTC/null·버킷 수치·CSV/HTML 다운로드/이스케이프·무효 조건·손상 디코딩·Worker 준비 전 취소/초기화·페이지 넘침·키보드/양 테마 axe를 확인했다. 브라우저 오류/외부 HTTP 요청/POST가 없고 local/session storage가 비어 있음을 확인했다.
+
+1/10/50 MiB는 로컬과 Linux에서 누락·파싱 실패 0. 원시 JSON은 benchmarks/phase9-local.json 및 phase9-ci.json. 성능 수치는 측정 환경의 단일 실행이며 SLA·실기기 성능과 구분한다. npm audit --omit=dev는 0건, 전체 도구 체인 moderate 10건은 남았다.
+
+최초 Linux 20/28, 다음 24/28, 확장 후 28/32 실패를 통해 대비/디코딩 안내/모바일 선택자 문제를 수정했고 오류를 skip하지 않았다. Windows 로컬 Playwright는 앱 제어 정책으로 시작이 차단됐다. 해당 환경의 실행 통과로 기록하지 않는다.
+
+미검증: 실기기/전체 스크린리더·WCAG 적합성/모든 파서 템플릿/최대 브라우저 다운로드·저메모리 장시간 세션/실제 롤백. 실제 Pages 결과는 PROGRESS.md에 별도 기록한다.

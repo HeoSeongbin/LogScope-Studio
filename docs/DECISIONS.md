@@ -187,10 +187,20 @@ AbortController와 범위 revision으로 취소·범위/버킷/선택/파일 변
 
 본문 skip link, nav/region 라벨, focus-visible, 상태 알림, 가상 목록 방향키/Page/Home/End를 추가한다. 모바일 실제 viewport 높이를 반영해 마지막 행까지 이동한다. jsdom 동작 검증과 실제 브라우저 390px 배치·테마/Canvas·다운로드 스모크를 수행했다. 전체 WCAG 적합성/스크린리더/브라우저별 키보드 동작을 검증했다고 주장하지 않는다.
 
-## ADR-029 — Production 아티팩트의 브라우저 회귀 게이트 (2026-11-13, 진행)
+## ADR-029 — Production 아티팩트의 브라우저 회귀 게이트 (2026-11-13, 채택)
 
 Playwright 1.65.0과 axe-core/playwright 4.14.0을 개발 의존성으로 추가한다. 실제 dist를 /LogScope-Studio/ 하위 경로의 정적 서버에서 제공하고 Chromium/Firefox/WebKit/390px mobile Chromium으로 검사한다. 앱 상태를 직접 주입하지 않고 File 입력·검색·파일 설정·다운로드 UI를 사용한다. 공개 가상 샘플만 사용하며 브라우저 오류/외부 HTTP 요청/POST 등을 검사한다. Vitest 대상은 src/tests로 한정해 Playwright 테스트를 이중 수집하지 않는다.
 
 로컬 Windows에서 브라우저 spawn UNKNOWN이 발생했으므로 이를 테스트 통과로 보지 않는다. Linux Actions 결과로 브라우저 회귀를 확인하고, 실패 trace/screenshot/report를 보존한다. 자동 axe 검사는 전체 WCAG·스크린리더 적합성을 보장하지 않는다. main 배포는 모든 검증 이후에만 실행하며 검증 브랜치는 배포하지 않는다.
 
 근거: [Playwright 구성](https://playwright.dev/docs/test-configuration), [GitHub Pages workflow](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
+
+## ADR-030 — 실제 Pages 배포와 검증 증거 (2026-11-13, 채택)
+
+기존 원격 workflow는 build 성공 후 비활성 Pages 때문에 deploy가 실패했다. 저장소의 Pages를 workflow 방식으로 활성화하고, 검증 브랜치는 배포 없이 검사만 실행한다. main에만 검증 artifact를 업로드/배포하고 배포 URL에서 Chromium의 실제 Worker·원문 JSON 다운로드 회귀를 다시 실행한다. 타입/린트/단위/E2E/런타임 audit/1·10·50 MiB 이벤트 보존 검증을 통과하기 전 배포하지 않는다.
+
+문서/스크린샷만 바뀐 push는 앱 dist에 영향을 주지 않으므로 재배포하지 않는다. 코드·lockfile·workflow 변경은 전체 게이트를 다시 실행한다. deploy job에만 pages/id-token write를 주고 checkout 인증은 보존하지 않는다. CI 결과/실패 trace는 공개 가상 데이터만 포함하며 7일 artifact로 보관한다. 실제 사용자 로그를 CI 입력으로 보내지 않는다.
+
+Linux 검증에서 작은 텍스트 대비와 브라우저별 fatal 디코딩 안내 차이를 실제 발견했다. TEXT_DECODE에 인코딩과 원래 예외 메시지/cause를 보존해 진단을 안정화했고 장식 번호가 숨겨지는 모바일 메뉴는 이름 기반 선택자로 검사한다. Windows 앱 제어 정책의 브라우저 차단은 우회하지 않고 해당 로컬 실패와 Linux 통과를 구분해 기록한다.
+
+런타임 npm audit는 0건이다. 전체 감사의 moderate 10건은 개발용 minimatch/ESLint/typescript-eslint 경로이며 호환성 없는 강제 다운그레이드/override를 하지 않았다. 이 결과를 전체 도구 체인의 취약점 0건으로 표현하지 않는다.
