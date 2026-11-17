@@ -1,0 +1,28 @@
+{
+  "synthetic": true,
+  "seed": 20261116,
+  "requestCount": 1415,
+  "localWindow": "2026-11-16 14:00–15:30 +09:00",
+  "outcomes": {
+    "normal": 1189,
+    "unauthorized": 18,
+    "slow": 53,
+    "validation": 34,
+    "database": 102,
+    "not-found": 11,
+    "payment": 8
+  },
+  "examples": {
+    "normal": "req-test-0001",
+    "unauthorized": "req-test-0012",
+    "slow": "req-test-0020",
+    "validation": "req-test-0032",
+    "database": "req-test-0034",
+    "not-found": "req-test-0060",
+    "payment": "req-test-0943"
+  },
+  "intentionalDamagedRecords": {
+    "03-structured.jsonl": 1,
+    "04-iis.log": 1
+  }
+}

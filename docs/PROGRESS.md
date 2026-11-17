@@ -21,7 +21,7 @@ AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 소스/Git을 비
 - Dark/Light 보조 텍스트·활성 메뉴·hover·선택 파일 상태 대비 수정. 숨긴 장식 번호와 무관한 모바일 메뉴 테스트
 - main/codex/PR CI 게이트, 실패 trace/report 7일 보관, main만 Pages 배포, 배포 후 실제 URL Chromium 검증
 - 문서/스크린샷 전용 변경은 앱 dist가 같으므로 재배포 생략
-- 아키텍처/CI Mermaid, 배포 가이드·포트폴리오 기술 설명·성능 기록 추가
+- 아키텍처/CI Mermaid, 배포 가이드·기술적 해결 과정·성능 기록 추가
 
 ## 실제 검증 결과
 
@@ -68,8 +68,24 @@ AGENTS.md, PROJECT.md, PROGRESS.md, DECISIONS.md, README.md와 소스/Git을 비
 - .github/workflows/pages.yml, vite.config.ts, eslint.config.js, .gitignore, package.json/package-lock.json (0.9.0)
 - src/core/parsing/stream-reader.ts, src/style.css, src/app/App.tsx, src/tests/streaming.test.ts, export.test.ts
 - scripts/benchmark.mjs, docs/benchmarks/phase9-*.json
-- README.md, PROGRESS.md, DECISIONS.md, ARCHITECTURE.md, TEST-CASES.md, PERFORMANCE.md, DEPLOYMENT.md, PORTFOLIO.md
+- README.md, PROGRESS.md, DECISIONS.md, ARCHITECTURE.md, TEST-CASES.md, PERFORMANCE.md, DEPLOYMENT.md, TECHNICAL-NOTES.md
 
 ## 다음 작업
 
 계획된 Phase 9의 배포 완료 기준을 충족했다. 이후 유지보수·실기기/스크린리더·대표 실제 로그의 한계 검증 및 미지원 파서/인코딩/내보내기 확장은 별도 사용자 지시로 진행한다. 정의된 테스트 범위를 넘어 프로젝트의 모든 요구/모든 환경을 검증했다고 주장하지 않는다.
+
+
+## 추가 로컬 테스트 데이터 확장 (2026-11-16)
+
+사용자 요청으로 test-logs의 가상 파일 4개를 운영 유사 합성 데이터로 확장했다. 약 90분·1,415개 요청을 여러 서비스에서 관측하는 11,108개 이벤트이며 DB 지연/반복 예외·결제 재시도/내부 예외·복구·4xx/5xx·시각 부재·IIS 필드 재선언을 포함한다. 실제 운영/개인/인증 데이터가 아니다.
+
+Production 파싱 Worker에서 Spring 4,599개/.NET 1,854개/JSON 3,239개/IIS 1,416개를 확인하고 모든 rawText를 원본 줄 범위와 대조했다. 의도적으로 잘린 JSON/IIS 마지막 행 각 1건만 파싱 실패로 기록됐다. 추천 요청 ID의 3개 이상 파일 연결도 확인했다. test-logs/README.md 및 scenario-summary.json/verified-results.json에 시나리오와 실제 검증 건수를 구분했다.
+
+npm run typecheck, npm run lint, npm test(18개 파일·193개), npm run build 통과. 기존 앱 분석 코드와 내장 샘플은 수정하지 않았다. 커밋·푸시·배포는 수행하지 않았고 후속 Phase를 추가하지 않았다.
+
+
+## 문서 표현 정리 (2026-11-17)
+
+사용자 요청에 따라 프로젝트의 소개·목표·검증 문구를 제품과 기술 설명 중심으로 정리했다. 기술적 해결 과정 문서는 TECHNICAL-NOTES.md로 이름을 변경하고 README와 진행 기록의 참조를 갱신했다. 이전 로컬 테스트 데이터 변경은 보존했다.
+
+관련 표현 재검색 및 문서 링크 대상 확인, npm run typecheck, npm run lint, npm test(18개 파일·193개), npm run build 통과. 커밋·푸시·배포는 하지 않았다.

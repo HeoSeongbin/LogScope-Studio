@@ -1,0 +1,84 @@
+{
+  "synthetic": true,
+  "verification": "Production parsing worker in Node; source line slices compared exactly",
+  "files": [
+    {
+      "file": "01-spring.log",
+      "bytes": 949558,
+      "lines": 5235,
+      "events": 4599,
+      "levels": {
+        "TRACE": 0,
+        "DEBUG": 1415,
+        "INFO": 2848,
+        "WARN": 226,
+        "ERROR": 110,
+        "FATAL": 0,
+        "UNKNOWN": 0
+      },
+      "exceptions": 110,
+      "failures": 0,
+      "untimed": 0,
+      "parser": "Spring Boot"
+    },
+    {
+      "file": "02-dotnet.log",
+      "bytes": 365380,
+      "lines": 1894,
+      "events": 1854,
+      "levels": {
+        "TRACE": 0,
+        "DEBUG": 585,
+        "INFO": 1186,
+        "WARN": 75,
+        "ERROR": 8,
+        "FATAL": 0,
+        "UNKNOWN": 0
+      },
+      "exceptions": 8,
+      "failures": 0,
+      "untimed": 0,
+      "parser": ".NET ILogger"
+    },
+    {
+      "file": "03-structured.jsonl",
+      "bytes": 1051376,
+      "lines": 3239,
+      "events": 3239,
+      "levels": {
+        "TRACE": 0,
+        "DEBUG": 245,
+        "INFO": 2657,
+        "WARN": 226,
+        "ERROR": 111,
+        "FATAL": 0,
+        "UNKNOWN": 0
+      },
+      "exceptions": 110,
+      "failures": 1,
+      "untimed": 11,
+      "parser": "JSON / Serilog JSON"
+    },
+    {
+      "file": "04-iis.log",
+      "bytes": 229291,
+      "lines": 1421,
+      "events": 1416,
+      "levels": {
+        "TRACE": 0,
+        "DEBUG": 0,
+        "INFO": 0,
+        "WARN": 0,
+        "ERROR": 0,
+        "FATAL": 0,
+        "UNKNOWN": 1416
+      },
+      "exceptions": 0,
+      "failures": 1,
+      "untimed": 1,
+      "parser": "IIS W3C"
+    }
+  ],
+  "totalEvents": 11108,
+  "totalFailures": 2
+}
